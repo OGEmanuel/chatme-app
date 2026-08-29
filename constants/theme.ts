@@ -16,14 +16,46 @@ export const Colors = {
     icon: '#687076',
     tabIconDefault: '#687076',
     tabIconSelected: tintColorLight,
+    primary: {
+      50: '#F5FBF7',
+      200: '#ABDBBE',
+      400: '#57B77D',
+    },
+    neutral: {
+      50: '#DDE2E8',
+      200: '#8EA3B3',
+      300: '#6E8597',
+      600: '#1F3C51',
+      800: '#0F2637',
+      900: '#081C2C',
+    },
+    other: {
+      divider: '#EAEEF2',
+    },
   },
   dark: {
     text: '#ECEDEE',
-    background: '#151718',
+    background: '#081C2C',
     tint: tintColorDark,
     icon: '#9BA1A6',
     tabIconDefault: '#9BA1A6',
     tabIconSelected: tintColorDark,
+    primary: {
+      50: '#F5FBF7',
+      200: '#ABDBBE',
+      400: '#57B77D',
+    },
+    neutral: {
+      50: '#DDE2E8',
+      200: '#8EA3B3',
+      300: '#6E8597',
+      600: '#1F3C51',
+      800: '#0F2637',
+      900: '#081C2C',
+    },
+    other: {
+      divider: '#EAEEF2',
+    },
   },
 };
 
@@ -47,7 +79,8 @@ export const Fonts = Platform.select({
   web: {
     sans: "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
     serif: "Georgia, 'Times New Roman', serif",
-    rounded: "'SF Pro Rounded', 'Hiragino Maru Gothic ProN', Meiryo, 'MS PGothic', sans-serif",
+    rounded:
+      "'SF Pro Rounded', 'Hiragino Maru Gothic ProN', Meiryo, 'MS PGothic', sans-serif",
     mono: "SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace",
   },
 });
