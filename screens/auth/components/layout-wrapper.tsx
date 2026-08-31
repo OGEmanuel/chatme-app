@@ -27,9 +27,7 @@ const AuthLayoutWrapper = (props: { children: React.ReactNode }) => {
           className="flex-1"
           keyboardShouldPersistTaps="handled"
         >
-          <View className={cn('flex-1 justify-between px-6 pt-16')}>
-            {children}
-          </View>
+          <View className={cn('flex-1 justify-between px-6')}>{children}</View>
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -52,13 +50,11 @@ export const AuthLayoutHeader = (props: {
   descriptionClassName?: string;
 }) => {
   const { header, children, canGoBack, descriptionClassName } = props;
-  const router = useRouter();
-  const colorScheme = useColorScheme();
 
   return (
     <>
       {canGoBack && <AuthBackButton />}
-      <View className="gap-3">
+      <View className={cn('gap-3', !canGoBack && 'pt-16')}>
         <TextCustom className="font-sf-pro-bold text-2xl/[125%]">
           {header}
         </TextCustom>
@@ -88,6 +84,7 @@ export const AuthBackButton = () => {
         borderRadius: 12,
         alignItems: 'center',
         justifyContent: 'center',
+        marginTop: 12,
       }}
       onPress={() => router.back()}
     >
