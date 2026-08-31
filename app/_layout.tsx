@@ -5,6 +5,7 @@ import {
   DefaultTheme,
   ThemeProvider,
 } from '@react-navigation/native';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useFonts } from 'expo-font';
 import { SplashScreen, Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
@@ -31,6 +32,8 @@ const NavigationDarkTheme = {
     card: Colors.dark.background,
   },
 };
+
+const queryClient = new QueryClient();
 
 export const unstable_settings = {
   anchor: '(tabs)',
@@ -62,40 +65,11 @@ export default function RootLayout() {
       }
     >
       <GestureHandlerRootView>
-        <StatusBar style="auto" />
-        <Stack
-          screenOptions={{
-            headerShown: false,
-            contentStyle: {
-              backgroundColor:
-                colorScheme === 'dark'
-                  ? Colors.dark.background
-                  : Colors.light.background,
-            },
-          }}
-        >
-          <Stack.Screen
-            name="index"
-            options={{
+        <QueryClientProvider client={queryClient}>
+          <StatusBar style="auto" />
+          <Stack
+            screenOptions={{
               headerShown: false,
-            }}
-          />
-
-          <Stack.Screen
-            name="(form-sheets)/world-countries"
-            options={{
-              presentation: 'formSheet',
-              sheetGrabberVisible: Platform.OS === 'android' ? false : true,
-              headerShown: Platform.OS === 'android' ? false : true,
-              headerStyle: {
-                backgroundColor:
-                  colorScheme === 'dark'
-                    ? Colors.dark.background
-                    : Colors.light.background,
-              },
-              headerTitle: 'Select a country',
-              sheetCornerRadius: Platform.OS === 'android' ? 18 : undefined,
-              sheetAllowedDetents: [0.75],
               contentStyle: {
                 backgroundColor:
                   colorScheme === 'dark'
@@ -103,8 +77,39 @@ export default function RootLayout() {
                     : Colors.light.background,
               },
             }}
-          />
-        </Stack>
+          >
+            <Stack.Screen
+              name="index"
+              options={{
+                headerShown: false,
+              }}
+            />
+
+            <Stack.Screen
+              name="(form-sheets)/world-countries"
+              options={{
+                presentation: 'formSheet',
+                sheetGrabberVisible: Platform.OS === 'android' ? false : true,
+                headerShown: Platform.OS === 'android' ? false : true,
+                headerStyle: {
+                  backgroundColor:
+                    colorScheme === 'dark'
+                      ? Colors.dark.background
+                      : Colors.light.background,
+                },
+                headerTitle: 'Select a country',
+                sheetCornerRadius: Platform.OS === 'android' ? 18 : undefined,
+                sheetAllowedDetents: [0.75],
+                contentStyle: {
+                  backgroundColor:
+                    colorScheme === 'dark'
+                      ? Colors.dark.background
+                      : Colors.light.background,
+                },
+              }}
+            />
+          </Stack>
+        </QueryClientProvider>
       </GestureHandlerRootView>
     </ThemeProvider>
   );

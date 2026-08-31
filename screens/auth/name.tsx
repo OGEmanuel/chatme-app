@@ -1,5 +1,6 @@
 import { useAppForm } from '@/hooks/form';
 import { revalidateLogic, useField } from '@tanstack/react-form';
+import { useRouter } from 'expo-router';
 import { View } from 'react-native';
 import z from 'zod';
 import AuthLayoutWrapper, {
@@ -14,6 +15,8 @@ const formSchema = z.object({
 });
 
 const NameScreen = () => {
+  const router = useRouter();
+
   const form = useAppForm({
     defaultValues: {
       name: '',
@@ -24,6 +27,7 @@ const NameScreen = () => {
     },
     onSubmit: ({ value }) => {
       console.log(value);
+      router.push('/(auth)/upload');
     },
   });
 

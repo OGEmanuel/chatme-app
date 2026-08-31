@@ -111,9 +111,11 @@ export const TextField = (props: TextFieldProps) => {
       </View>
       <View
         className={cn(
-          'border-other-divider h-14 flex-row items-center rounded-2xl border px-5 dark:border-neutral-300',
+          'border-other-divider h-14 flex-row items-center rounded-2xl border px-5',
           isPhoneInput ? 'gap-4' : 'gap-3',
-          isValid && 'bg-primary-50 border-primary-400 dark:bg-neutral-800',
+          isValid
+            ? 'bg-primary-50 border-primary-400 dark:bg-neutral-800'
+            : 'dark:border-neutral-300',
         )}
       >
         {isPhoneInput ? (
