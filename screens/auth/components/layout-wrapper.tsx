@@ -57,22 +57,7 @@ export const AuthLayoutHeader = (props: {
 
   return (
     <>
-      {canGoBack && (
-        <PressableScale
-          style={{
-            width: 40,
-            height: 40,
-            borderWidth: 1,
-            borderColor: Colors.light.other.divider,
-            borderRadius: 12,
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
-          onPress={() => router.back()}
-        >
-          <ArrowLeftIcon stroke={colorScheme === 'dark' ? 'white' : 'black'} />
-        </PressableScale>
-      )}
+      {canGoBack && <AuthBackButton />}
       <View className="gap-3">
         <TextCustom className="font-sf-pro-bold text-2xl/[125%]">
           {header}
@@ -87,5 +72,26 @@ export const AuthLayoutHeader = (props: {
         </TextCustom>
       </View>
     </>
+  );
+};
+
+export const AuthBackButton = () => {
+  const router = useRouter();
+  const colorScheme = useColorScheme();
+  return (
+    <PressableScale
+      style={{
+        width: 40,
+        height: 40,
+        borderWidth: 1,
+        borderColor: Colors.light.other.divider,
+        borderRadius: 12,
+        alignItems: 'center',
+        justifyContent: 'center',
+      }}
+      onPress={() => router.back()}
+    >
+      <ArrowLeftIcon stroke={colorScheme === 'dark' ? 'white' : 'black'} />
+    </PressableScale>
   );
 };
