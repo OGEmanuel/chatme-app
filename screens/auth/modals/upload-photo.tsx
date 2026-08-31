@@ -6,10 +6,16 @@ import { LegendList } from '@legendapp/list/react-native';
 import { queryOptions, useQuery } from '@tanstack/react-query';
 import { BlurView } from 'expo-blur';
 import * as ImagePicker from 'expo-image-picker';
+import {
+  launchCameraAsync,
+  PermissionStatus,
+  useCameraPermissions,
+} from 'expo-image-picker';
 import * as MediaLibrary from 'expo-media-library';
 import { useEffect } from 'react';
 import {
   ActivityIndicator,
+  Alert,
   Image,
   Modal,
   Pressable,
@@ -43,6 +49,7 @@ const UploadPhotoModal = (props: {
   const { openModal, setOpenModal } = props;
   const colorScheme = useColorScheme();
   const [permissionResponse, requestPermission] = MediaLibrary.usePermissions();
+
   const { setPhotoUri } = usePhotoControlStore();
 
   const { data, isPending, isError } = useQuery({ ...getPhotos(10) });
@@ -61,6 +68,41 @@ const UploadPhotoModal = (props: {
 
     if (!result.canceled) {
       setPhotoUri(result.assets[0].uri);
+      setOpenModal(false);
+    }
+  };
+
+  const [cameraPermissionInformation, requestCameraPermission] =
+    useCameraPermissions();
+
+  const verifyPermissions = async () => {
+    if (cameraPermissionInformation?.status === PermissionStatus.UNDETERMINED) {
+      const resp = await requestCameraPermission();
+
+      return resp.granted;
+    }
+    if (cameraPermissionInformation?.status === PermissionStatus.DENIED) {
+      Alert.alert(
+        'Insufficient Permissions',
+        'You need to grant camera permissions to use this app',
+      );
+
+      return false;
+    }
+
+    return true;
+  };
+
+  const takeImageHandler = async () => {
+    const hasPermission = await verifyPermissions();
+    if (!hasPermission) return;
+    const image = await launchCameraAsync({
+      allowsEditing: true,
+      aspect: [16, 9],
+      quality: 0.5,
+    });
+    if (image.assets) {
+      setPhotoUri(image.assets[0].uri);
       setOpenModal(false);
     }
   };
@@ -149,7 +191,10 @@ const UploadPhotoModal = (props: {
                 />
               )}
               <View className="px-2">
-                <Pressable className="flex-row items-center gap-4 px-2 py-[10px]">
+                <Pressable
+                  onPress={takeImageHandler}
+                  className="flex-row items-center gap-4 px-2 py-[10px]"
+                >
                   <CameraSVG />
                   <TextCustom className="font-sf-pro-medium leading-[150%]">
                     Take Photo

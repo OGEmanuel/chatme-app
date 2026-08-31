@@ -1,7 +1,7 @@
 export const QUERY_KEYS = {
   photos: {
     all: ['photos'],
-    some: (first?: number) => ['photos', first],
-    byId: (id: string) => ['photos', id],
+    some: (first?: number) => [...QUERY_KEYS.photos.all, first],
+    byId: (id: string) => [...QUERY_KEYS.photos.all, id],
   },
 };
