@@ -1,3 +1,4 @@
+import { toastConfig } from '@/components/toast/app-toast';
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import {
@@ -13,6 +14,7 @@ import { useEffect } from 'react';
 import { Platform } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import 'react-native-reanimated';
+import Toast from 'react-native-toast-message';
 import '../global.css';
 
 const NavigationLightTheme = {
@@ -110,6 +112,7 @@ export default function RootLayout() {
             />
           </Stack>
         </QueryClientProvider>
+        <Toast config={toastConfig} position="top" />
       </GestureHandlerRootView>
     </ThemeProvider>
   );

@@ -1,8 +1,5 @@
 import { useFieldContext, useFormContext } from '@/hooks/form-contexts';
 import { cn } from '@/lib/utils';
-// import AlertCircle from '@/screens/auth/assets/icons/alert-circle.svg';
-// import EyeNoSlash from '@/screens/auth/assets/icons/eye-no-slash-icon.svg';
-// import EyeSlash from '@/screens/auth/assets/icons/eye-slash-icon.svg';
 import UserIcon from '@/assets/icons/jsx/user-icon';
 import { Colors } from '@/constants/theme';
 import { useSelector } from '@tanstack/react-form';
@@ -36,7 +33,7 @@ export function SubscribeButton({
       {isSubmitting => (
         <Button
           onPress={onPress}
-          // isPending={isPending || isSubmitting}
+          isPending={isPending || isSubmitting}
           disabled={isPending || isSubmitting || disabled}
           label={label}
         />
@@ -59,7 +56,6 @@ const ErrorMessages = ({
           key={typeof error === 'string' ? error : error.message}
           className="flex-row items-center gap-2"
         >
-          {/* <AlertCircle /> */}
           <TextCustom
             className={cn('font-inter text-sm/5 !text-red-600', className)}
           >
@@ -111,10 +107,10 @@ export const TextField = (props: TextFieldProps) => {
       </View>
       <View
         className={cn(
-          'border-other-divider h-14 flex-row items-center rounded-2xl border px-5',
+          'h-14 flex-row items-center rounded-2xl border border-other-divider px-5',
           isPhoneInput ? 'gap-4' : 'gap-3',
           isValid
-            ? 'bg-primary-50 border-primary-400 dark:bg-neutral-800'
+            ? 'border-primary-400 bg-primary-50 dark:bg-neutral-800'
             : 'dark:border-neutral-300',
         )}
       >
@@ -225,7 +221,7 @@ export const OTPField = (props: {
                 className={cn(
                   'size-14 items-center justify-center rounded-2xl border',
                   isActive
-                    ? 'bg-primary-50 border-primary-400 dark:bg-neutral-800'
+                    ? 'border-primary-400 bg-primary-50 dark:bg-neutral-800'
                     : 'border-other-divider dark:border-neutral-300',
                 )}
               >

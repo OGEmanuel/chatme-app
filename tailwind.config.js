@@ -25,6 +25,7 @@ module.exports = {
           900: '#081C2C',
         },
         other: {
+          danger: '#DD524C',
           divider: '#EAEEF2',
         },
       },

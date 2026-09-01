@@ -1,7 +1,6 @@
 import Logo from '@/assets/icons/logo-icon.svg';
 import Button from '@/components/ui/button';
 import TextCustom from '@/components/ui/text';
-import { Colors } from '@/constants/theme';
 import { Link } from 'expo-router';
 import { Image, useColorScheme, View } from 'react-native';
 

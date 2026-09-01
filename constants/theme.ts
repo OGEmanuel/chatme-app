@@ -32,6 +32,7 @@ export const Colors = {
       900: '#081C2C',
     },
     other: {
+      danger: '#DD524C',
       divider: '#EAEEF2',
     },
   },
@@ -57,6 +58,7 @@ export const Colors = {
       900: '#081C2C',
     },
     other: {
+      danger: '#DD524C',
       divider: '#EAEEF2',
     },
   },
