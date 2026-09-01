@@ -1,13 +1,16 @@
 import { Colors } from '@/constants/theme';
 import { PressableScale } from 'pressto';
-import { Text } from 'react-native';
+import { ActivityIndicator, Text, useColorScheme } from 'react-native';
 
 const Button = (props: {
   label: string;
   disabled?: boolean;
+  isPending?: boolean;
   onPress?: () => void;
 }) => {
-  const { label, disabled, onPress } = props;
+  const { label, disabled, onPress, isPending } = props;
+  const colorScheme = useColorScheme();
+
   return (
     <PressableScale
       disabled={disabled}
@@ -22,9 +25,16 @@ const Button = (props: {
         alignItems: 'center',
       }}
     >
-      <Text className="font-sf-pro-bold text-sm/[150%] text-white">
-        {label}
-      </Text>
+      {isPending ? (
+        <ActivityIndicator
+          size="small"
+          color={colorScheme === 'dark' ? 'white' : 'black'}
+        />
+      ) : (
+        <Text className="font-sf-pro-bold text-sm/[150%] text-white">
+          {label}
+        </Text>
+      )}
     </PressableScale>
   );
 };
