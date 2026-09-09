@@ -1,7 +1,7 @@
-import { useFieldContext, useFormContext } from '@/hooks/form-contexts';
-import { cn } from '@/lib/utils';
 import UserIcon from '@/assets/icons/jsx/user-icon';
 import { Colors } from '@/constants/theme';
+import { useFieldContext, useFormContext } from '@/hooks/form-contexts';
+import { cn } from '@/lib/utils';
 import { useSelector } from '@tanstack/react-form';
 import { Link } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
@@ -80,6 +80,7 @@ type TextFieldProps = {
   countryFlag?: string;
   isPhoneInput?: boolean;
   isValid?: boolean;
+  icon?: React.ReactNode;
 };
 
 export const TextField = (props: TextFieldProps) => {
@@ -92,6 +93,7 @@ export const TextField = (props: TextFieldProps) => {
     wrapperClassName,
     isPhoneInput,
     isValid,
+    icon,
   } = props;
   const field = useFieldContext<string>();
   const errors = useSelector(field.store, state => state.meta.errors);
@@ -112,6 +114,7 @@ export const TextField = (props: TextFieldProps) => {
           isValid
             ? 'border-primary-400 bg-primary-50 dark:bg-neutral-800'
             : 'dark:border-neutral-300',
+          wrapperClassName,
         )}
       >
         {isPhoneInput ? (
@@ -124,15 +127,17 @@ export const TextField = (props: TextFieldProps) => {
             </Pressable>
           </Link>
         ) : (
-          <UserIcon
-            fill={
-              isValid
-                ? Colors.light.primary[400]
-                : colorScheme === 'dark'
-                  ? Colors.dark.neutral[200]
-                  : Colors.light.neutral[300]
-            }
-          />
+          (icon ?? (
+            <UserIcon
+              fill={
+                isValid
+                  ? Colors.light.primary[400]
+                  : colorScheme === 'dark'
+                    ? Colors.dark.neutral[200]
+                    : Colors.light.neutral[300]
+              }
+            />
+          ))
         )}
         <TextInput
           className={cn(

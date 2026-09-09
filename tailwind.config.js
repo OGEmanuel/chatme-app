@@ -20,6 +20,7 @@ module.exports = {
           200: '#8EA3B3',
           300: '#6E8597',
           400: '#4B667A',
+          500: '#3A566A',
           600: '#1F3C51',
           700: '#163043',
           800: '#0F2637',
@@ -28,6 +29,7 @@ module.exports = {
         other: {
           danger: '#DD524C',
           divider: '#EAEEF2',
+          warning: '#E8A13A',
         },
       },
       fontFamily: {

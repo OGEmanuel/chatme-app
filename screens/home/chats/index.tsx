@@ -1,18 +1,19 @@
-import PlusIcon from '@/assets/icons/jsx/Icon/plus-icon';
+import PlusIcon from '@/assets/icons/jsx/plus-icon';
 import IconButton from '@/components/ui/icon-button';
 import { Colors } from '@/constants/theme';
 import { useState } from 'react';
 import { useColorScheme, View } from 'react-native';
-import EmptyState from './empty-state';
+import ChatsView from './chats-view';
 import PinCodeModal from './modal/pin-code';
 
 const ChatsScreen = () => {
   const colorScheme = useColorScheme();
-  const [openModal, setOpenModal] = useState(true);
+  const [openModal, setOpenModal] = useState(false);
 
   return (
     <>
-      <EmptyState />
+      {/* <EmptyState /> */}
+      <ChatsView />
       <PinCodeModal openModal={openModal} onSetOpenModal={setOpenModal} />
       <View>
         <IconButton
