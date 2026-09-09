@@ -1,9 +1,8 @@
 import ArrowLeftIcon from '@/assets/icons/jsx/arrow-left';
+import IconButton from '@/components/ui/icon-button';
 import TextCustom from '@/components/ui/text';
-import { Colors } from '@/constants/theme';
 import { cn } from '@/lib/utils';
 import { useRouter } from 'expo-router';
-import { PressableScale } from 'pressto';
 import {
   KeyboardAvoidingView,
   ScrollView,
@@ -49,11 +48,17 @@ export const AuthLayoutHeader = (props: {
   canGoBack?: boolean;
   descriptionClassName?: string;
 }) => {
+  const router = useRouter();
+  const colorScheme = useColorScheme();
   const { header, children, canGoBack, descriptionClassName } = props;
 
   return (
     <>
-      {canGoBack && <AuthBackButton />}
+      {canGoBack && (
+        <IconButton onPress={() => router.back()}>
+          <ArrowLeftIcon stroke={colorScheme === 'dark' ? 'white' : 'black'} />
+        </IconButton>
+      )}
       <View className={cn('gap-3', !canGoBack && 'pt-16')}>
         <TextCustom className="font-sf-pro-bold text-2xl/[125%]">
           {header}
@@ -68,27 +73,5 @@ export const AuthLayoutHeader = (props: {
         </TextCustom>
       </View>
     </>
-  );
-};
-
-export const AuthBackButton = () => {
-  const router = useRouter();
-  const colorScheme = useColorScheme();
-  return (
-    <PressableScale
-      style={{
-        width: 40,
-        height: 40,
-        borderWidth: 1,
-        borderColor: Colors.light.other.divider,
-        borderRadius: 12,
-        alignItems: 'center',
-        justifyContent: 'center',
-        marginTop: 12,
-      }}
-      onPress={() => router.back()}
-    >
-      <ArrowLeftIcon stroke={colorScheme === 'dark' ? 'white' : 'black'} />
-    </PressableScale>
   );
 };
