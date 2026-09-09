@@ -1,10 +1,10 @@
 import CameraSVG from '@/assets/icons/camera-icon.svg';
 import CameraIcon from '@/assets/icons/jsx/camera-icon';
 import PhotographIcon from '@/assets/icons/photograph-icon.svg';
+import ModalWrapper from '@/components/ui/modal-wrapper';
 import TextCustom from '@/components/ui/text';
 import { LegendList } from '@legendapp/list/react-native';
 import { queryOptions, useQuery } from '@tanstack/react-query';
-import { BlurView } from 'expo-blur';
 import * as ImagePicker from 'expo-image-picker';
 import {
   launchCameraAsync,
@@ -17,9 +17,7 @@ import {
   ActivityIndicator,
   Alert,
   Image,
-  Modal,
   Pressable,
-  StyleSheet,
   useColorScheme,
   View,
 } from 'react-native';
@@ -137,84 +135,63 @@ const UploadPhotoModal = (props: {
   };
 
   return (
-    <Modal
-      animationType="fade"
-      transparent
-      visible={openModal}
-      onRequestClose={() => setOpenModal(false)}
+    <ModalWrapper
+      openModal={openModal}
+      onSetOpenModal={setOpenModal}
+      innerPressableClassName="w-full rounded-2xl bg-white dark:bg-neutral-700"
+      outerPressableClassName="flex-1 items-center justify-end bg-neutral-900/[24%] px-6 pb-[2.625rem]"
+      innerPressableStyle={{
+        boxShadow: '0px 3px 8px 0px #18342103, 0px 6px 16px 0px #0C291D05',
+      }}
     >
-      <BlurView
-        intensity={10}
-        tint="dark"
-        experimentalBlurMethod="dimezisBlurView"
-        style={StyleSheet.absoluteFill}
-      >
-        <Pressable
-          onPress={() => setOpenModal(false)}
-          className="flex-1 items-center justify-end bg-neutral-900/[24%] px-6 pb-[2.625rem]"
-        >
-          <Pressable
-            onPress={() => {}}
-            style={{
-              boxShadow:
-                '0px 3px 8px 0px #18342103, 0px 6px 16px 0px #0C291D05',
-            }}
-            className="w-full rounded-2xl bg-white dark:bg-neutral-700"
-          >
-            <View className="gap-2 py-2">
-              {isPending ? (
-                <View className="flex-row">
-                  {Array.from({ length: 5 }).map((_, index) => (
-                    <View
-                      key={index}
-                      className="size-16 items-center justify-center"
-                    >
-                      <ActivityIndicator
-                        size="small"
-                        color={colorScheme === 'dark' ? 'white' : 'black'}
-                      />
-                    </View>
-                  ))}
-                </View>
-              ) : isError ? null : (
-                <LegendList
-                  data={data}
-                  horizontal
-                  showsHorizontalScrollIndicator={false}
-                  keyExtractor={item => item.id}
-                  contentContainerStyle={{ gap: 8 }}
-                  contentContainerClassName="px-2"
-                  recycleItems={true}
-                  renderItem={({ item, index }) => (
-                    <RenderPhotos asset={item} index={index} />
-                  )}
+      <View className="gap-2 py-2">
+        {isPending ? (
+          <View className="flex-row">
+            {Array.from({ length: 5 }).map((_, index) => (
+              <View key={index} className="size-16 items-center justify-center">
+                <ActivityIndicator
+                  size="small"
+                  color={colorScheme === 'dark' ? 'white' : 'black'}
                 />
-              )}
-              <View className="px-2">
-                <Pressable
-                  onPress={takeImageHandler}
-                  className="flex-row items-center gap-4 px-2 py-[10px]"
-                >
-                  <CameraSVG />
-                  <TextCustom className="font-sf-pro-medium leading-[150%]">
-                    Take Photo
-                  </TextCustom>
-                </Pressable>
-                <Pressable
-                  onPress={pickImageAsync}
-                  className="flex-row items-center gap-4 px-2 py-[10px]"
-                >
-                  <PhotographIcon />
-                  <TextCustom className="font-sf-pro-medium leading-[150%] ">
-                    Choose From Library
-                  </TextCustom>
-                </Pressable>
               </View>
-            </View>
+            ))}
+          </View>
+        ) : isError ? null : (
+          <LegendList
+            data={data}
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            keyExtractor={item => item.id}
+            contentContainerStyle={{ gap: 8 }}
+            contentContainerClassName="px-2"
+            recycleItems={true}
+            renderItem={({ item, index }) => (
+              <RenderPhotos asset={item} index={index} />
+            )}
+          />
+        )}
+        <View className="px-2">
+          <Pressable
+            onPress={takeImageHandler}
+            className="flex-row items-center gap-4 px-2 py-[10px]"
+          >
+            <CameraSVG />
+            <TextCustom className="font-sf-pro-medium leading-[150%]">
+              Take Photo
+            </TextCustom>
           </Pressable>
-        </Pressable>
-      </BlurView>
-    </Modal>
+          <Pressable
+            onPress={pickImageAsync}
+            className="flex-row items-center gap-4 px-2 py-[10px]"
+          >
+            <PhotographIcon />
+            <TextCustom className="font-sf-pro-medium leading-[150%] ">
+              Choose From Library
+            </TextCustom>
+          </Pressable>
+        </View>
+      </View>
+    </ModalWrapper>
   );
 };
 

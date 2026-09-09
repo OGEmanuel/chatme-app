@@ -1,4 +1,5 @@
 import { Colors } from '@/constants/theme';
+import { cn } from '@/lib/utils';
 import { PressableScale } from 'pressto';
 import { ActivityIndicator, Text, useColorScheme } from 'react-native';
 
@@ -7,8 +8,9 @@ const Button = (props: {
   disabled?: boolean;
   isPending?: boolean;
   onPress?: () => void;
+  variant?: 'primary' | 'secondary';
 }) => {
-  const { label, disabled, onPress, isPending } = props;
+  const { label, disabled, onPress, isPending, variant = 'primary' } = props;
   const colorScheme = useColorScheme();
 
   return (
@@ -16,9 +18,12 @@ const Button = (props: {
       disabled={disabled}
       onPress={onPress}
       style={{
-        backgroundColor: disabled
-          ? Colors.light.primary[200]
-          : Colors.light.primary[400],
+        backgroundColor:
+          variant === 'primary'
+            ? disabled
+              ? Colors[colorScheme ?? 'light'].primary[200]
+              : Colors[colorScheme ?? 'light'].primary[400]
+            : Colors[colorScheme ?? 'light'].primary[50],
         height: 56,
         borderRadius: 16,
         justifyContent: 'center',
@@ -31,7 +36,12 @@ const Button = (props: {
           color={colorScheme === 'dark' ? 'white' : 'black'}
         />
       ) : (
-        <Text className="font-sf-pro-bold text-sm/[150%] text-white">
+        <Text
+          className={cn(
+            'font-sf-pro-bold text-sm/[150%]',
+            variant === 'primary' ? 'text-white' : 'text-primary-400',
+          )}
+        >
           {label}
         </Text>
       )}

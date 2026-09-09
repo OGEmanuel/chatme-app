@@ -1,5 +1,8 @@
+import ArrowLeftIcon from '@/assets/icons/jsx/arrow-left';
 import Button from '@/components/ui/button';
+import IconButton from '@/components/ui/icon-button';
 import TextCustom from '@/components/ui/text';
+import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Image, useColorScheme, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -9,7 +12,6 @@ import UploadIcon from './assets/icons/upload-icon.svg';
 import IllustrationDark from './assets/icons/upload-illustration-dark.svg';
 import Illustration from './assets/icons/upload-illustration.svg';
 import UploadImageIcon from './assets/icons/upload-image-icon.svg';
-import { AuthBackButton } from './components/layout-wrapper';
 import UploadPhotoModal from './modals/upload-photo';
 import { usePhotoControlStore } from './store/photo-control-store';
 
@@ -17,11 +19,24 @@ const UploadScreen = () => {
   const colorScheme = useColorScheme();
   const [openModal, setOpenModal] = useState(false);
   const { photoUri } = usePhotoControlStore();
+  const router = useRouter();
+
+  const handlePress = () => {
+    if (photoUri) {
+      router.push({
+        pathname: '/(tabs)/chats',
+      });
+    } else {
+      setOpenModal(true);
+    }
+  };
 
   return (
     <SafeAreaView className="flex-1">
       <View className="flex-1 gap-6 px-6 pb-2 pt-3">
-        <AuthBackButton />
+        <IconButton onPress={() => router.back()}>
+          <ArrowLeftIcon stroke={colorScheme === 'dark' ? 'white' : 'black'} />
+        </IconButton>
         <View className="flex-1 justify-between">
           <View className="items-center">
             <TextCustom className="font-sf-pro-bold text-2xl/[125%]">
@@ -64,7 +79,7 @@ const UploadScreen = () => {
           </View>
           <Button
             label={photoUri ? 'Next' : 'Upload Photo'}
-            onPress={() => setOpenModal(true)}
+            onPress={handlePress}
           />
           <UploadPhotoModal openModal={openModal} setOpenModal={setOpenModal} />
         </View>
