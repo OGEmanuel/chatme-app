@@ -1,9 +1,9 @@
 import { Tabs } from 'expo-router';
 import React from 'react';
 
-import ChatIcon from '@/assets/icons/jsx/Icon/chat-icon';
-import CogIcon from '@/assets/icons/jsx/Icon/cog-icon';
-import PhoneIcon from '@/assets/icons/jsx/Icon/phone-icon';
+import ChatIcon from '@/assets/icons/jsx/chat-icon';
+import CogIcon from '@/assets/icons/jsx/cog-icon';
+import PhoneIcon from '@/assets/icons/jsx/phone-icon';
 import { HapticTab } from '@/components/haptic-tab';
 import { Colors, Fonts } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
@@ -20,6 +20,8 @@ export default function TabLayout() {
         tabBarButton: HapticTab,
         tabBarStyle: {
           backgroundColor: Colors[colorScheme ?? 'light'].backgroundSecondary,
+          height: 84,
+          paddingTop: 8,
         },
         tabBarLabelStyle: {
           marginTop: 4,

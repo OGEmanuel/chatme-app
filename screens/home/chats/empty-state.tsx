@@ -1,4 +1,4 @@
-import SearchIcon from '@/assets/icons/jsx/Icon/search';
+import SearchIcon from '@/assets/icons/jsx/search';
 import IconButton from '@/components/ui/icon-button';
 import TextCustom from '@/components/ui/text';
 import { cn } from '@/lib/utils';
@@ -28,7 +28,7 @@ const EmptyState = () => {
       <View className="flex-1 px-6 py-4">
         <View className="flex-row items-center justify-between">
           <TextCustom className="font-sf-pro-bold text-2xl/[125%]">
-            Charts
+            Chats
           </TextCustom>
           <IconButton onPress={() => {}}>
             <SearchIcon stroke={colorScheme === 'dark' ? 'white' : 'black'} />

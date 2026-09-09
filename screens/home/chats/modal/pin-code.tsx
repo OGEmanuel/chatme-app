@@ -1,4 +1,4 @@
-import LockClosedIcon from '@/assets/icons/jsx/Icon/lock-closed-icon';
+import LockClosedIcon from '@/assets/icons/jsx/lock-closed-icon';
 import Button from '@/components/ui/button';
 import ModalWrapper from '@/components/ui/modal-wrapper';
 import TextCustom from '@/components/ui/text';
