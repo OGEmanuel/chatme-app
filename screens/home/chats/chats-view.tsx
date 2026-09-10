@@ -3,6 +3,7 @@ import PushPin from '@/assets/icons/jsx/push-pin';
 import SearchIcon from '@/assets/icons/jsx/search';
 import TrashIcon from '@/assets/icons/jsx/trash-icon';
 import VolumeOffIcon from '@/assets/icons/jsx/volume-off-icon';
+// import Button from '@/components/ui/button';
 import TextCustom from '@/components/ui/text';
 import { Colors } from '@/constants/theme';
 import { useAppForm } from '@/hooks/form';
@@ -10,8 +11,9 @@ import { LegendList } from '@legendapp/list/react-native';
 import { useMemo, useState } from 'react';
 import { useColorScheme, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { ChatItem } from './components/chat-item';
+import { ArchivedItem, ChatItem } from './components/chat-item';
 import Header from './components/header';
+import { ListItem } from './constants/type';
 
 const CHATS = [
   {
@@ -112,12 +114,22 @@ const ChatsView = () => {
     [selected],
   );
 
+  const listData: ListItem[] = useMemo(() => {
+    return [
+      { id: 0.1, type: 'archived' as const },
+      ...(chatData ?? []).map(chat => ({
+        ...chat,
+        type: 'chat' as const,
+      })),
+    ];
+  }, [chatData]);
+
   return (
     <View className="flex-1">
       <Header className="pb-5 pt-4">
         <View className="flex-row items-center justify-between">
           <View className="flex-row gap-2">
-            <TextCustom className="font-sf-pro-bold text-2xl/[125%]">
+            <TextCustom className="font-sf-pro-bold text-2xl/[125%] !text-white">
               Chats
             </TextCustom>
             {selected.length > 0 && (
@@ -144,10 +156,14 @@ const ChatsView = () => {
             <field.TextField
               icon={
                 <SearchIcon
-                  stroke={Colors[colorScheme ?? 'light'].neutral[200]}
+                  stroke={
+                    colorScheme === 'dark'
+                      ? Colors.dark.neutral[200]
+                      : Colors.light.other['white/90']
+                  }
                 />
               }
-              wrapperClassName="bg-white/[6%] p-3"
+              wrapperClassName="bg-white/[6%] p-3 dark:border-white/[16%]"
               inputProps={{
                 autoCapitalize: 'none',
                 autoCorrect: false,
@@ -158,7 +174,9 @@ const ChatsView = () => {
                 enablesReturnKeyAutomatically: true,
                 placeholder: 'Search chat, people and more...',
                 placeholderTextColor:
-                  Colors[colorScheme ?? 'light'].neutral[200],
+                  colorScheme === 'dark'
+                    ? Colors.dark.neutral[200]
+                    : Colors.light.other['white/90'],
                 className:
                   'ios:h-6 android:py-0 android:px-0 font-inter flex-1 font-sf-pro-display text-neutral-900 dark:text-white',
               }}
@@ -167,24 +185,38 @@ const ChatsView = () => {
         </form.AppField>
       </Header>
       <View>
+        {/* <Button
+          label="Pin"
+          onPress={() =>
+            toast.action({
+              title: 'Chat pinned successfully',
+              icon: <PushPin size={12} />,
+            })
+          }
+        /> */}
         <LegendList
-          data={chatData}
+          data={listData}
           showsVerticalScrollIndicator={false}
           keyExtractor={item => item.id.toString()}
-          contentContainerClassName="py-3"
           className="gap-1"
           contentContainerStyle={{
             paddingBottom: insets.bottom + 200,
             gap: 4,
           }}
           recycleItems={true}
-          renderItem={({ item }) => (
-            <ChatItem
-              item={item}
-              selected={selected}
-              onSetSelected={setSelected}
-            />
-          )}
+          renderItem={({ item }) => {
+            if (item.type === 'archived') {
+              return <ArchivedItem />;
+            }
+
+            return (
+              <ChatItem
+                item={item}
+                selected={selected}
+                onSetSelected={setSelected}
+              />
+            );
+          }}
         />
       </View>
     </View>

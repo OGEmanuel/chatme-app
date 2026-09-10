@@ -68,7 +68,8 @@ export default function RootLayout() {
     >
       <GestureHandlerRootView>
         <QueryClientProvider client={queryClient}>
-          <StatusBar style="auto" />
+          <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
+
           <Stack
             screenOptions={{
               headerShown: false,
@@ -80,13 +81,38 @@ export default function RootLayout() {
               },
             }}
           >
-            <Stack.Screen
-              name="index"
-              options={{
-                headerShown: false,
-              }}
-            />
-
+            <Stack.Protected guard={false}>
+              <Stack.Screen
+                name="index"
+                options={{
+                  headerShown: false,
+                }}
+              />
+              <Stack.Screen
+                name="(auth)/sign-in"
+                options={{
+                  headerShown: false,
+                }}
+              />
+              <Stack.Screen
+                name="(auth)/verify"
+                options={{
+                  headerShown: false,
+                }}
+              />
+              <Stack.Screen
+                name="(auth)/name"
+                options={{
+                  headerShown: false,
+                }}
+              />
+              <Stack.Screen
+                name="(auth)/upload"
+                options={{
+                  headerShown: false,
+                }}
+              />
+            </Stack.Protected>
             <Stack.Screen
               name="(form-sheets)/world-countries"
               options={{
@@ -110,9 +136,15 @@ export default function RootLayout() {
                 },
               }}
             />
+            <Stack.Screen
+              name="(tabs)"
+              options={{
+                headerShown: false,
+              }}
+            />
           </Stack>
         </QueryClientProvider>
-        <Toast config={toastConfig} position="top" />
+        <Toast config={toastConfig} position="bottom" />
       </GestureHandlerRootView>
     </ThemeProvider>
   );

@@ -1,5 +1,5 @@
 import { cn } from '@/lib/utils';
-import { Image, useColorScheme, View } from 'react-native';
+import { Image, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const Header = (props: { children: React.ReactNode; className?: string }) => {
@@ -8,7 +8,7 @@ const Header = (props: { children: React.ReactNode; className?: string }) => {
 
   return (
     <View
-      className="relative bg-neutral-700"
+      className="relative bg-primary-400 dark:bg-neutral-700"
       style={{
         paddingTop: insets.top,
       }}

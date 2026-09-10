@@ -13,7 +13,6 @@ import AuthLayoutWrapper, {
   AuthLayoutInnerWrapper,
 } from './components/layout-wrapper';
 import { MUTATIONS } from './lib/queries';
-import { Platform } from 'react-native';
 
 const formSchema = z.object({
   otp: z.string().min(4, {
@@ -74,21 +73,23 @@ const VerifyScreen = () => {
       onSubmit: formSchema,
     },
     onSubmit: ({ value }) => {
-      mutate(
-        {
-          challengeId,
-          code: value.otp,
-          device: {
-            name: 'Owner',
-            platform: Platform.OS,
-          },
-        },
-        {
-          onSuccess: () => {
-            router.push('/(auth)/name');
-          },
-        },
-      );
+      router.push('/(auth)/name');
+      console.log('value', value);
+      // mutate(
+      //   {
+      //     challengeId,
+      //     code: value.otp,
+      //     device: {
+      //       name: 'Owner',
+      //       platform: Platform.OS,
+      //     },
+      //   },
+      //   {
+      //     onSuccess: () => {
+      //       router.push('/(auth)/name');
+      //     },
+      //   },
+      // );
     },
   });
 

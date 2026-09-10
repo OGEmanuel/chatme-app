@@ -1,11 +1,9 @@
 import { useAppForm } from '@/hooks/form';
 import useSendRequest from '@/lib/hooks/useSendRequests';
-import { toast } from '@/lib/toast';
 import { getCallingCode } from '@/lib/utils';
 import { revalidateLogic, useField } from '@tanstack/react-form';
 import * as Clipboard from 'expo-clipboard';
 import { useRouter } from 'expo-router';
-import { Alert } from 'react-native';
 import countries from 'world-countries';
 import z from 'zod';
 import AuthLayoutWrapper, {
@@ -62,39 +60,44 @@ const SignInScreen = () => {
         filterByCountryName(countryName)[0].idd.suffixes,
       )}${value.phoneNumber}`;
 
-      mutate(
-        { phoneNumber },
-        {
-          onSuccess: (data: {
-            resendInSeconds: number;
-            challengeId: string;
-          }) => {
-            Alert.alert(
-              'OTP Sent!',
-              `Please copy this code 1234 for user verification`,
-              [
-                {
-                  text: 'Copy',
-                  style: 'default',
-                  onPress: () => {
-                    (copyToClipboard(`1234`),
-                      toast.success('Code copied!', 'Please check your phone'),
-                      router.push({
-                        pathname: '/(auth)/verify',
-                        params: {
-                          phone: phoneNumber,
-                          resendInSeconds: data.resendInSeconds.toString(),
-                          challengeId: data.challengeId,
-                        },
-                      }),
-                      form.reset());
-                  },
-                },
-              ],
-            );
-          },
-        },
-      );
+      router.push({
+        pathname: '/(auth)/verify',
+        params: { phone: phoneNumber },
+      });
+
+      // mutate(
+      //   { phoneNumber },
+      //   {
+      //     onSuccess: (data: {
+      //       resendInSeconds: number;
+      //       challengeId: string;
+      //     }) => {
+      //       Alert.alert(
+      //         'OTP Sent!',
+      //         `Please copy this code 1234 for user verification`,
+      //         [
+      //           {
+      //             text: 'Copy',
+      //             style: 'default',
+      //             onPress: () => {
+      //               (copyToClipboard(`1234`),
+      //                 toast.success('Code copied!', 'Please check your phone'),
+      //                 router.push({
+      //                   pathname: '/(auth)/verify',
+      //                   params: {
+      //                     phone: phoneNumber,
+      //                     resendInSeconds: data.resendInSeconds.toString(),
+      //                     challengeId: data.challengeId,
+      //                   },
+      //                 }),
+      //                 form.reset());
+      //             },
+      //           },
+      //         ],
+      //       );
+      //     },
+      //   },
+      // );
     },
   });
 

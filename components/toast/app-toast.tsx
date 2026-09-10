@@ -1,3 +1,5 @@
+import { cn } from '@/lib/utils';
+import { BlurView } from 'expo-blur';
 import { View } from 'react-native';
 import { Text } from 'react-native-svg';
 import { ToastConfig } from 'react-native-toast-message';
@@ -35,7 +37,7 @@ const toastConfig: ToastConfig = {
 
   error: ({ text1, text2 }) => (
     <View
-      className="bg-other-danger w-[80%] flex-row items-center gap-2 rounded-xl p-3"
+      className="w-[80%] flex-row items-center gap-2 rounded-xl bg-other-danger p-3"
       style={{
         shadowColor: '#08080E',
         shadowOffset: {
@@ -59,6 +61,46 @@ const toastConfig: ToastConfig = {
           </TextCustom>
         )}
       </View>
+    </View>
+  ),
+
+  action: ({ text1, text2, props }) => (
+    <View
+      className={cn(
+        'relative overflow-hidden rounded-[100px]',
+        props?.className,
+      )}
+    >
+      <BlurView
+        intensity={10}
+        tint="dark"
+        experimentalBlurMethod="dimezisBlurView"
+        style={{
+          width: '100%',
+          height: '100%',
+        }}
+      >
+        <View className="flex-row items-center gap-2 bg-neutral-900/[72%] p-3">
+          <View className="size-6 overflow-hidden rounded-full bg-neutral-900/30">
+            <BlurView
+              intensity={10}
+              tint="dark"
+              experimentalBlurMethod="dimezisBlurView"
+              style={{
+                width: '100%',
+                height: '100%',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              {props?.icon}
+            </BlurView>
+          </View>
+          <TextCustom className="leading-[150%] !text-white">
+            {text1}
+          </TextCustom>
+        </View>
+      </BlurView>
     </View>
   ),
 

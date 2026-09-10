@@ -1,12 +1,11 @@
-import { Tabs } from 'expo-router';
-import React from 'react';
-
 import ChatIcon from '@/assets/icons/jsx/chat-icon';
 import CogIcon from '@/assets/icons/jsx/cog-icon';
 import PhoneIcon from '@/assets/icons/jsx/phone-icon';
 import { HapticTab } from '@/components/haptic-tab';
 import { Colors, Fonts } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import { Tabs } from 'expo-router';
+import React from 'react';
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
