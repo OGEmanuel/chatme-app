@@ -17,6 +17,7 @@ module.exports = {
         },
         neutral: {
           50: '#DDE2E8',
+          100: '#B3C2CE',
           200: '#8EA3B3',
           300: '#6E8597',
           400: '#4B667A',
@@ -30,6 +31,7 @@ module.exports = {
           danger: '#DD524C',
           divider: '#EAEEF2',
           warning: '#E8A13A',
+          'white/90': '#FFFFFFE5',
         },
       },
       fontFamily: {

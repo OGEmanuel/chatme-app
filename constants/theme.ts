@@ -35,6 +35,8 @@ export const Colors = {
     other: {
       danger: '#DD524C',
       divider: '#EAEEF2',
+      warning: '#E8A13A',
+      'white/90': '#FFFFFFE5',
     },
   },
   dark: {
@@ -63,6 +65,8 @@ export const Colors = {
     other: {
       danger: '#DD524C',
       divider: '#EAEEF2',
+      warning: '#E8A13A',
+      'white/90': '#FFFFFFE5',
     },
   },
 };
