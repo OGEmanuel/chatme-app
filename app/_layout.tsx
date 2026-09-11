@@ -122,8 +122,8 @@ export default function RootLayout() {
                 headerStyle: {
                   backgroundColor:
                     colorScheme === 'dark'
-                      ? Colors.dark.background
-                      : Colors.light.background,
+                      ? Colors.dark.backgroundSecondary
+                      : Colors.light.backgroundSecondary,
                 },
                 headerTitle: 'Select a country',
                 sheetCornerRadius: Platform.OS === 'android' ? 18 : undefined,
@@ -131,8 +131,24 @@ export default function RootLayout() {
                 contentStyle: {
                   backgroundColor:
                     colorScheme === 'dark'
-                      ? Colors.dark.background
-                      : Colors.light.background,
+                      ? Colors.dark.backgroundSecondary
+                      : Colors.light.backgroundSecondary,
+                },
+              }}
+            />
+            <Stack.Screen
+              name="(form-sheets)/new-chat"
+              options={{
+                presentation: 'formSheet',
+                sheetGrabberVisible: Platform.OS === 'android' ? false : true,
+                headerShown: false,
+                sheetCornerRadius: Platform.OS === 'android' ? 18 : undefined,
+                sheetAllowedDetents: [1],
+                contentStyle: {
+                  backgroundColor:
+                    colorScheme === 'dark'
+                      ? Colors.dark.backgroundSecondary
+                      : Colors.light.backgroundSecondary,
                 },
               }}
             />

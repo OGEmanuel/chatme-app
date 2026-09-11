@@ -1,39 +1,30 @@
-import PlusIcon from '@/assets/icons/jsx/plus-icon';
-import IconButton from '@/components/ui/icon-button';
-import { Colors } from '@/constants/theme';
-import { toast } from '@/lib/toast';
-import { useEffect, useState } from 'react';
-import { useColorScheme, View } from 'react-native';
+import { BlurView } from 'expo-blur';
+import { useState } from 'react';
+import { StyleSheet, useColorScheme } from 'react-native';
 import ChatsView from './chats-view';
+import FloatingActionButton from './modal/floating-action-button';
 import PinCodeModal from './modal/pin-code';
+import { useBlurControlStore } from './store/blur-control';
 
 const ChatsScreen = () => {
   const colorScheme = useColorScheme();
   const [openModal, setOpenModal] = useState(false);
+  const { blurView } = useBlurControlStore();
 
   return (
     <>
       {/* <EmptyState /> */}
       <ChatsView />
+      {blurView && (
+        <BlurView
+          intensity={10}
+          tint={'dark'}
+          experimentalBlurMethod="dimezisBlurView"
+          style={StyleSheet.absoluteFill}
+        />
+      )}
       <PinCodeModal openModal={openModal} onSetOpenModal={setOpenModal} />
-      <View>
-        <IconButton
-          style={{
-            width: 64,
-            height: 64,
-            borderRadius: 999,
-            backgroundColor: Colors[colorScheme ?? 'light'].primary[400],
-            borderWidth: 0,
-            position: 'absolute',
-            bottom: 24,
-            right: 24,
-            boxShadow: '0px 6px 16px 0px #0C291D1F',
-          }}
-          onPress={() => {}}
-        >
-          <PlusIcon />
-        </IconButton>
-      </View>
+      <FloatingActionButton />
     </>
   );
 };

@@ -164,6 +164,7 @@ const ChatsView = () => {
                 />
               }
               wrapperClassName="bg-white/[6%] p-3 dark:border-white/[16%]"
+              shouldHideError
               inputProps={{
                 autoCapitalize: 'none',
                 autoCorrect: false,

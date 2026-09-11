@@ -1,12 +1,16 @@
 import Svg, { Path } from 'react-native-svg';
 
-const ArrowLeftIcon = (props: { className?: string; stroke?: string }) => {
-  const { className, stroke = 'white' } = props;
+const ArrowLeftIcon = (props: {
+  className?: string;
+  stroke?: string;
+  size?: number;
+}) => {
+  const { className, stroke = 'white', size = 24 } = props;
   return (
     <Svg
       className={className}
-      width="24"
-      height="24"
+      width={size}
+      height={size}
       viewBox="0 0 24 24"
       fill="none"
     >
