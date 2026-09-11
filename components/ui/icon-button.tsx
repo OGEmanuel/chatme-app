@@ -11,17 +11,19 @@ const IconButton = (props: {
 
   return (
     <PressableScale
-      style={{
-        width: 40,
-        height: 40,
-        borderWidth: 1,
-        borderColor: Colors.light.other.divider,
-        borderRadius: 12,
-        alignItems: 'center',
-        justifyContent: 'center',
-        marginTop: 12,
-        ...style,
-      }}
+      style={[
+        {
+          width: 40,
+          height: 40,
+          borderWidth: 1,
+          borderColor: Colors.light.other.divider,
+          borderRadius: 12,
+          alignItems: 'center',
+          justifyContent: 'center',
+          marginTop: 12,
+        },
+        style,
+      ]}
       onPress={onPress}
     >
       {children}

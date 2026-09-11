@@ -4,6 +4,7 @@ import UserCircleIcon from '@/assets/icons/jsx/user-circle-icon';
 import UserGroupIcon from '@/assets/icons/jsx/user-group-icon';
 import IconButton from '@/components/ui/icon-button';
 import { Colors } from '@/constants/theme';
+import { Link } from 'expo-router';
 import { PressableScale } from 'pressto';
 import { StyleSheet, TextStyle, useColorScheme, View } from 'react-native';
 import Animated, {
@@ -39,7 +40,7 @@ const FloatingActionButton = () => {
     setBlurView(!isOpen.value);
     const config = {
       easing: Easing.bezier(0.68, -0.6, 0.32, 1.6),
-      duration: 200,
+      duration: 300,
     };
 
     if (isOpen.value) {
@@ -146,12 +147,13 @@ const FloatingActionButton = () => {
   return (
     <>
       <Animated.View style={[styles.actionButton, newChatIcon, chatWidthStyle]}>
-        <FloatingCards
-          icon={<ChatIcon size={24} />}
-          label="New Chat"
-          onPress={() => {}}
-          style={opacityText}
-        />
+        <Link href="/(form-sheets)/new-chat" push asChild>
+          <FloatingCards
+            icon={<ChatIcon size={24} />}
+            label="New Chat"
+            style={opacityText}
+          />
+        </Link>
       </Animated.View>
       <Animated.View
         style={[styles.actionButton, newContactIcon, contactWidthStyle]}
@@ -159,7 +161,7 @@ const FloatingActionButton = () => {
         <FloatingCards
           icon={<UserCircleIcon />}
           label="New Contact"
-          onPress={() => {}}
+          onPress={() => handlePress()}
           style={opacityText}
         />
       </Animated.View>
@@ -204,6 +206,7 @@ const FloatingCards = (props: {
   style?: TextStyle;
 }) => {
   const { icon, label, onPress, style } = props;
+  const colorScheme = useColorScheme();
 
   return (
     <PressableScale
@@ -213,8 +216,10 @@ const FloatingCards = (props: {
         alignItems: 'center',
         gap: 4,
         borderRadius: 100,
-        backgroundColor: '#fff',
+        backgroundColor:
+          colorScheme === 'dark' ? Colors.dark.neutral[700] : '#fff',
         padding: 4,
+        boxShadow: '0px 6px 16px 0px #0C291D05',
       }}
     >
       <View className="items-center justify-center rounded-full p-3">
@@ -222,7 +227,7 @@ const FloatingCards = (props: {
       </View>
       <Animated.Text
         style={style}
-        className="font-sf-pro-medium text-lg/[125%] text-neutral-600"
+        className="font-sf-pro-medium text-lg/[125%] text-neutral-600 dark:text-white"
       >
         {label}
       </Animated.Text>
