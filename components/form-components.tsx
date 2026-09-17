@@ -102,11 +102,13 @@ export const TextField = (props: TextFieldProps) => {
 
   return (
     <View className="gap-2">
-      <View>
-        <TextCustom className="font-sf-pro-medium text-sm/[150%] dark:text-neutral-50">
-          {inputLabel}
-        </TextCustom>
-      </View>
+      {inputLabel && (
+        <View>
+          <TextCustom className="font-sf-pro-medium text-sm/[150%] dark:text-neutral-50">
+            {inputLabel}
+          </TextCustom>
+        </View>
+      )}
       <View
         className={cn(
           'h-14 flex-row items-center rounded-2xl border border-other-divider px-5',

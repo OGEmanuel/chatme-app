@@ -7,9 +7,9 @@ import VolumeOffIcon from '@/assets/icons/jsx/volume-off-icon';
 import TextCustom from '@/components/ui/text';
 import { Colors } from '@/constants/theme';
 import { cn } from '@/lib/utils';
-import { Link } from 'expo-router';
+import { Link, useRouter } from 'expo-router';
 import { PressableScale } from 'pressto';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Image, Pressable, useColorScheme, View } from 'react-native';
 import Swipeable from 'react-native-gesture-handler/ReanimatedSwipeable';
 import { ChatItemProps } from '../constants/type';
@@ -23,6 +23,8 @@ export const ChatItem = ({
   const [dragged, setDragged] = useState(false);
   const colorScheme = useColorScheme();
   const isSelected = selected?.includes(item.id);
+  const router = useRouter();
+  const inSelectionMode = selected?.length!! > 0;
 
   const toggleSelection = (id: number) => {
     if (isArchived) return;
@@ -38,10 +40,20 @@ export const ChatItem = ({
   };
 
   const handlePress = () => {
-    if (isSelected) {
-      toggleSelection(item.id);
+    if (!inSelectionMode) {
+      router.push(`/chat/${item.id}`);
+      return;
     }
+
+    toggleSelection(item.id);
   };
+  // const handlePress = () => {
+  //   if (inSelectionMode) {
+  //     toggleSelection(item.id);
+  //   } else {
+  //     router.push(`/chat/${item.id}`);
+  //   }
+  // };
 
   return (
     <Swipeable

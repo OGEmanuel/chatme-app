@@ -3,8 +3,9 @@ import CameraIcon from '@/assets/icons/jsx/camera-icon';
 import PhotographIcon from '@/assets/icons/photograph-icon.svg';
 import ModalWrapper from '@/components/ui/modal-wrapper';
 import TextCustom from '@/components/ui/text';
+import { getLocalUri, getPhotos } from '@/lib/utils';
 import { LegendList } from '@legendapp/list/react-native';
-import { queryOptions, useQuery } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import * as ImagePicker from 'expo-image-picker';
 import {
   launchCameraAsync,
@@ -21,24 +22,7 @@ import {
   useColorScheme,
   View,
 } from 'react-native';
-import { QUERIES } from '../lib/queries';
-import { QUERY_KEYS } from '../lib/queries/key-factory';
 import { usePhotoControlStore } from '../store/photo-control-store';
-
-const getPhotos = (first?: number) => {
-  return queryOptions({
-    queryKey: QUERY_KEYS.photos.some(first),
-    queryFn: () => QUERIES.getPhotos(first),
-  });
-};
-
-const getLocalUri = (id: string) => {
-  return queryOptions({
-    queryKey: QUERY_KEYS.photos.byId(id),
-    queryFn: () => QUERIES.getLocalUri(id),
-    enabled: !!id,
-  });
-};
 
 const UploadPhotoModal = (props: {
   openModal: boolean;

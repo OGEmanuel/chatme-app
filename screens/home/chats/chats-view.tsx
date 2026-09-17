@@ -11,8 +11,8 @@ import { LegendList } from '@legendapp/list/react-native';
 import { useMemo, useState } from 'react';
 import { useColorScheme, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import Header from '../../components/header';
 import { ArchivedItem, ChatItem } from './components/chat-item';
-import Header from './components/header';
 import { ListItem } from './constants/type';
 
 const CHATS = [
@@ -95,6 +95,7 @@ const ChatsView = () => {
   const insets = useSafeAreaInsets();
   const colorScheme = useColorScheme();
   const [selected, setSelected] = useState<number[]>([]);
+  const [selectionMode, setSelectionMode] = useState(false);
 
   const form = useAppForm({
     defaultValues: {
@@ -126,7 +127,7 @@ const ChatsView = () => {
 
   return (
     <View className="flex-1">
-      <Header className="pb-5 pt-4">
+      <Header className="gap-4 pb-5 pt-4">
         <View className="flex-row items-center justify-between">
           <View className="flex-row gap-2">
             <TextCustom className="font-sf-pro-bold text-2xl/[125%] !text-white">
@@ -135,7 +136,7 @@ const ChatsView = () => {
             {selected.length > 0 && (
               <View className="flex-row items-center gap-2">
                 <View className="size-2 rounded-full bg-white" />
-                <TextCustom className="font-sf-pro-bold text-2xl/[125%]">
+                <TextCustom className="font-sf-pro-bold text-2xl/[125%] !text-white">
                   {selected.length}
                 </TextCustom>
               </View>

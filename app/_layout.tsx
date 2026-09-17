@@ -137,7 +137,7 @@ export default function RootLayout() {
               }}
             />
             <Stack.Screen
-              name="(form-sheets)/new-chat"
+              name="(form-sheets)/contact"
               options={{
                 presentation: 'formSheet',
                 sheetGrabberVisible: Platform.OS === 'android' ? false : true,
@@ -149,6 +149,23 @@ export default function RootLayout() {
                     colorScheme === 'dark'
                       ? Colors.dark.backgroundSecondary
                       : Colors.light.backgroundSecondary,
+                },
+              }}
+            />
+            <Stack.Screen
+              name="(form-sheets)/map"
+              options={{
+                presentation: 'formSheet',
+                sheetGrabberVisible: Platform.OS === 'android' ? false : true,
+                headerShown: false,
+                sheetCornerRadius: Platform.OS === 'android' ? 18 : undefined,
+                sheetAllowedDetents: [1],
+                contentStyle: {
+                  backgroundColor:
+                    colorScheme === 'dark'
+                      ? Colors.dark.backgroundSecondary
+                      : Colors.light.backgroundSecondary,
+                  height: '100%',
                 },
               }}
             />
