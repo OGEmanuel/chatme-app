@@ -8,7 +8,7 @@ import { Colors } from '@/constants/theme';
 import { BlurView } from 'expo-blur';
 import { useRouter } from 'expo-router';
 import { PressableScale } from 'pressto';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import {
   Image,
   ImageBackground,
@@ -35,6 +35,15 @@ const ChatUIScreen = () => {
     colorScheme === 'dark'
       ? require('../../assets/images/chat-bg-dark.png')
       : require('../../assets/images/chat-bg.png');
+
+  const [nudge, setNudge] = useState(0);
+
+  const forceRelayout = useCallback(() => {
+    setNudge(1);
+    requestAnimationFrame(() => setNudge(0));
+  }, []);
+
+  useEffect(() => forceRelayout(), []);
 
   useEffect(() => {
     const showSubscription = Keyboard.addListener('keyboardWillShow', () => {
@@ -69,7 +78,7 @@ const ChatUIScreen = () => {
                 <PressableScale onPress={() => router.back()}>
                   <ArrowLeftIcon />
                 </PressableScale>
-                <View className="flex flex-row items-center gap-4">
+                <View className="flex-row items-center gap-4">
                   <View className="size-12 overflow-hidden rounded-full border-2 border-white">
                     <Image
                       source={{
@@ -98,8 +107,11 @@ const ChatUIScreen = () => {
               </View>
             </Header>
             <View
+              // style={{
+              //   paddingBottom: keyboardVisible ? undefined : bottom,
+              // }}
               style={{
-                paddingBottom: keyboardVisible ? undefined : bottom,
+                paddingBottom: keyboardVisible ? undefined : bottom + nudge,
               }}
               className="flex-1"
             >

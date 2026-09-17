@@ -1,4 +1,4 @@
-import ChatUIScreen from '@/screens/chat/chat-ui';
+import ChatUIScreen from '@/screens/chat';
 
 const ChatUI = () => {
   return <ChatUIScreen />;

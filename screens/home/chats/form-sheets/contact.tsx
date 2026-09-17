@@ -8,7 +8,7 @@ import { cn } from '@/lib/utils';
 import { faker } from '@faker-js/faker';
 import { SectionList } from '@legendapp/list/section-list';
 import { useField } from '@tanstack/react-form';
-import { Link } from 'expo-router';
+import { Link, useRouter } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import { Image, Pressable, useColorScheme, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -105,6 +105,7 @@ const ContactScreen = () => {
 
   const RenderContactList = (props: { item: Contact }) => {
     const { item } = props;
+
     return (
       <Link href={`/chat/${item.id}`} replace asChild>
         <Pressable className="px-6">
