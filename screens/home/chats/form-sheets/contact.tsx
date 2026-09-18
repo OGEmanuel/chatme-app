@@ -138,7 +138,7 @@ const ContactScreen = () => {
               }}
             >
               <ArrowLeftIcon
-                size={20}
+                size={'20'}
                 stroke={Colors[colorScheme ?? 'light'].neutral[300]}
               />
             </View>

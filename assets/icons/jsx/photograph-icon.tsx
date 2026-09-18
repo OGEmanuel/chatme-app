@@ -1,6 +1,6 @@
 import Svg, { Path } from 'react-native-svg';
 
-const PhotographIcon = (props: { size: number; fill: string }) => {
+const PhotographIcon = (props: { size?: number; fill?: string }) => {
   const { size = '20', fill = '#57B77D' } = props;
 
   return (

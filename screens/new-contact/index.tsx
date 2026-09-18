@@ -4,8 +4,9 @@ import UploadImageIcon from '@/assets/icons/jsx/upload-image-icon';
 import UserIcon from '@/assets/icons/jsx/user-icon';
 import TextCustom from '@/components/ui/text';
 import { useAppForm } from '@/hooks/form';
-import { filterByCountryName, getCallingCode } from '@/lib/utils';
+import { cn, filterByCountryName, getCallingCode } from '@/lib/utils';
 import { revalidateLogic, useField } from '@tanstack/react-form';
+import { Link, useRouter } from 'expo-router';
 import { PressableScale } from 'pressto';
 import { useEffect, useState } from 'react';
 import {
@@ -34,6 +35,8 @@ const NewContactScreen = () => {
   const { countryName } = useCountryControlStore();
   const { bottom } = useSafeAreaInsets();
   const [keyboardVisible, setKeyboardVisible] = useState(false);
+  const [allValid, setAllValid] = useState(false);
+  const router = useRouter();
 
   const form = useAppForm({
     defaultValues: {
@@ -49,6 +52,16 @@ const NewContactScreen = () => {
     onSubmit: ({ value }) => {
       console.log(value);
     },
+  });
+
+  const firstNameField = useField({
+    name: 'firstName',
+    form,
+  });
+
+  const lastNameField = useField({
+    name: 'lastName',
+    form,
   });
 
   const phoneNumberField = useField({
@@ -71,6 +84,22 @@ const NewContactScreen = () => {
     };
   }, []);
 
+  useEffect(() => {
+    if (
+      firstNameField.state.value.length >= 3 &&
+      lastNameField.state.value.length >= 3 &&
+      phoneNumberField.state.value.length >= 3
+    ) {
+      setAllValid(true);
+    } else {
+      setAllValid(false);
+    }
+  }, [
+    firstNameField.state.value,
+    lastNameField.state.value,
+    phoneNumberField.state.value,
+  ]);
+
   return (
     <KeyboardAvoidingView
       behavior="padding"
@@ -78,15 +107,10 @@ const NewContactScreen = () => {
       keyboardVerticalOffset={8}
     >
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-        <View
-          style={{
-            paddingBottom: keyboardVisible ? undefined : bottom,
-          }}
-          className="flex-1"
-        >
+        <View className="flex-1">
           <Header>
             <View className="flex-row items-center justify-between pb-[8rem] pt-4">
-              <PressableScale>
+              <PressableScale onPress={() => router.back()}>
                 <ArrowLeftIcon />
               </PressableScale>
               <TextCustom className="font-sf-pro-bold text-lg/[125%]">
@@ -95,13 +119,29 @@ const NewContactScreen = () => {
               <View className="size-6" />
             </View>
           </Header>
-          <View className="flex-1 justify-between px-6">
+          <View
+            style={{
+              paddingBottom: keyboardVisible ? undefined : bottom,
+            }}
+            className={cn(
+              'flex-1 justify-between px-6',
+              allValid && 'border border-neutral-300',
+            )}
+          >
             <View className="flex-1 gap-6">
               <View className="relative -mt-[5.5rem] size-[11rem] items-center justify-center self-center rounded-full border-4 border-neutral-900 bg-neutral-100">
                 <UserIcon fill="white" size={'116'} />
-                <View className="absolute bottom-0 right-0">
-                  <UploadImageIcon />
-                </View>
+                <Link href="/(form-sheets)/edit-profile-picture" push asChild>
+                  <PressableScale
+                    style={{
+                      position: 'absolute',
+                      bottom: 0,
+                      right: 0,
+                    }}
+                  >
+                    <UploadImageIcon />
+                  </PressableScale>
+                </Link>
               </View>
               <ScrollView
                 keyboardShouldPersistTaps="handled"
@@ -117,8 +157,8 @@ const NewContactScreen = () => {
                       <field.TextField
                         icon={<UserIcon />}
                         wrapperClassName="p-3"
-                        shouldHideError
                         inputLabel="First name"
+                        isValid={firstNameField.state.value.length >= 3}
                         inputProps={{
                           autoCapitalize: 'none',
                           autoCorrect: false,
@@ -140,7 +180,7 @@ const NewContactScreen = () => {
                       <field.TextField
                         icon={<UserIcon />}
                         wrapperClassName="p-3"
-                        shouldHideError
+                        isValid={lastNameField.state.value.length >= 3}
                         inputLabel="Last name"
                         inputProps={{
                           autoCapitalize: 'none',
@@ -180,12 +220,14 @@ const NewContactScreen = () => {
                       />
                     )}
                   </form.AppField>
-                  <Pressable className="items-center gap-2">
-                    <QrcodeIcon />
-                    <TextCustom className="leading-[150%] !text-neutral-200">
-                      Or add via QR code
-                    </TextCustom>
-                  </Pressable>
+                  <Link href="/new-contact/qr-code" push asChild>
+                    <Pressable className="items-center gap-2">
+                      <QrcodeIcon />
+                      <TextCustom className="leading-[150%] !text-neutral-200">
+                        Or add via QR code
+                      </TextCustom>
+                    </Pressable>
+                  </Link>
                 </View>
               </ScrollView>
             </View>
@@ -193,7 +235,7 @@ const NewContactScreen = () => {
               <form.SubscribeButton
                 onPress={form._handleSubmit}
                 isPending={false}
-                //   disabled={phoneNumberField.state.value.length < 3}
+                disabled={!allValid}
                 label={'Next'}
               />
             </form.AppForm>
