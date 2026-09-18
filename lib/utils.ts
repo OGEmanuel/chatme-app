@@ -4,6 +4,7 @@ import { queryOptions } from '@tanstack/react-query';
 import { clsx, type ClassValue } from 'clsx';
 import { Dimensions } from 'react-native';
 import { twMerge } from 'tailwind-merge';
+import countries from 'world-countries';
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -32,4 +33,8 @@ export const getPhotos = (first?: number) => {
     queryKey: QUERY_KEYS.photos.some(first),
     queryFn: () => QUERIES.getPhotos(first),
   });
+};
+
+export const filterByCountryName = (countryName: string) => {
+  return countries.filter(country => country.name.common === countryName);
 };

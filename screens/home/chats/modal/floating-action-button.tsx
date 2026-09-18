@@ -158,12 +158,14 @@ const FloatingActionButton = () => {
       <Animated.View
         style={[styles.actionButton, newContactIcon, contactWidthStyle]}
       >
-        <FloatingCards
-          icon={<UserCircleIcon />}
-          label="New Contact"
-          onPress={() => handlePress()}
-          style={opacityText}
-        />
+        <Link href="/new-contact" push asChild>
+          <FloatingCards
+            icon={<UserCircleIcon />}
+            label="New Contact"
+            onPress={() => handlePress()}
+            style={opacityText}
+          />
+        </Link>
       </Animated.View>
       <Animated.View
         style={[styles.actionButton, newGroupIcon, groupWidthStyle]}

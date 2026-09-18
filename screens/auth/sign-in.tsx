@@ -1,10 +1,9 @@
 import { useAppForm } from '@/hooks/form';
 import useSendRequest from '@/lib/hooks/useSendRequests';
-import { getCallingCode } from '@/lib/utils';
+import { filterByCountryName, getCallingCode } from '@/lib/utils';
 import { revalidateLogic, useField } from '@tanstack/react-form';
 import * as Clipboard from 'expo-clipboard';
 import { useRouter } from 'expo-router';
-import countries from 'world-countries';
 import z from 'zod';
 import AuthLayoutWrapper, {
   AuthLayoutHeader,
@@ -23,9 +22,6 @@ const formSchema = z.object({
 const SignInScreen = () => {
   const { countryName } = useCountryControlStore();
   const router = useRouter();
-  const filterByCountryName = (countryName: string) => {
-    return countries.filter(country => country.name.common === countryName);
-  };
   const copyToClipboard = async (text: string) => {
     await Clipboard.setStringAsync(text);
   };

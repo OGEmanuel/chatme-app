@@ -107,9 +107,6 @@ const ChatUIScreen = () => {
               </View>
             </Header>
             <View
-              // style={{
-              //   paddingBottom: keyboardVisible ? undefined : bottom,
-              // }}
               style={{
                 paddingBottom: keyboardVisible ? undefined : bottom + nudge,
               }}
