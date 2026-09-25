@@ -5,8 +5,8 @@ import { useRouter } from 'expo-router';
 import { PressableScale } from 'pressto';
 import { View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import Header from '../../../components/header';
 import { ChatItem } from '../components/chat-item';
-import Header from '../components/header';
 
 const CHATS = [
   {

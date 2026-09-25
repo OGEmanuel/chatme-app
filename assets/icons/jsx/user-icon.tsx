@@ -1,13 +1,17 @@
 import Svg, { Path } from 'react-native-svg';
 
-const UserIcon = (props: { className?: string; fill?: string }) => {
-  const { className, fill = '#6E8597' } = props;
+const UserIcon = (props: {
+  className?: string;
+  fill?: string;
+  size?: string;
+}) => {
+  const { className, fill = '#6E8597', size = '20' } = props;
 
   return (
     <Svg
       className={className}
-      width="20"
-      height="20"
+      width={size}
+      height={size}
       viewBox="0 0 20 20"
       fill="none"
     >

@@ -3,9 +3,9 @@ import Svg, { Path } from 'react-native-svg';
 const ArrowLeftIcon = (props: {
   className?: string;
   stroke?: string;
-  size?: number;
+  size?: string;
 }) => {
-  const { className, stroke = 'white', size = 24 } = props;
+  const { className, stroke = 'white', size = '24' } = props;
   return (
     <Svg
       className={className}

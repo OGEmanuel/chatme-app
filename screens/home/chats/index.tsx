@@ -1,10 +1,13 @@
 import { BlurView } from 'expo-blur';
 import { useState } from 'react';
-import { StyleSheet, useColorScheme } from 'react-native';
+import { Pressable, StyleSheet, useColorScheme } from 'react-native';
+import Animated, { useSharedValue } from 'react-native-reanimated';
 import ChatsView from './chats-view';
 import FloatingActionButton from './modal/floating-action-button';
 import PinCodeModal from './modal/pin-code';
 import { useBlurControlStore } from './store/blur-control';
+
+const AnimatedBlurView = Animated.createAnimatedComponent(BlurView);
 
 const ChatsScreen = () => {
   const colorScheme = useColorScheme();
@@ -23,8 +26,8 @@ const ChatsScreen = () => {
           style={StyleSheet.absoluteFill}
         />
       )}
-      <PinCodeModal openModal={openModal} onSetOpenModal={setOpenModal} />
       <FloatingActionButton />
+      <PinCodeModal openModal={openModal} onSetOpenModal={setOpenModal} />
     </>
   );
 };

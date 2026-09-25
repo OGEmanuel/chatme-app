@@ -23,21 +23,20 @@ import { useBlurControlStore } from '../store/blur-control';
 const FloatingActionButton = () => {
   const colorScheme = useColorScheme();
   const { setBlurView } = useBlurControlStore();
-
   const newChat = useSharedValue(30);
   const newContact = useSharedValue(30);
   const newGroup = useSharedValue(30);
   const newChatWidth = useSharedValue(48);
   const newContactWidth = useSharedValue(48);
   const newGroupWidth = useSharedValue(48);
-  const isOpen = useSharedValue(false);
   const opacity = useSharedValue(0);
+  const isOpen = useSharedValue(false);
+
   const progress = useDerivedValue(() =>
     isOpen.value ? withTiming(1) : withTiming(0),
   );
 
   const handlePress = () => {
-    setBlurView(!isOpen.value);
     const config = {
       easing: Easing.bezier(0.68, -0.6, 0.32, 1.6),
       duration: 300,
@@ -70,6 +69,7 @@ const FloatingActionButton = () => {
       opacity.value = withDelay(700, withSpring(1));
     }
     isOpen.value = !isOpen.value;
+    setBlurView(!isOpen.value);
   };
 
   const opacityText = useAnimatedStyle(() => {
@@ -147,7 +147,7 @@ const FloatingActionButton = () => {
   return (
     <>
       <Animated.View style={[styles.actionButton, newChatIcon, chatWidthStyle]}>
-        <Link href="/(form-sheets)/new-chat" push asChild>
+        <Link href="/(form-sheets)/contact" push asChild>
           <FloatingCards
             icon={<ChatIcon size={24} />}
             label="New Chat"
@@ -158,12 +158,14 @@ const FloatingActionButton = () => {
       <Animated.View
         style={[styles.actionButton, newContactIcon, contactWidthStyle]}
       >
-        <FloatingCards
-          icon={<UserCircleIcon />}
-          label="New Contact"
-          onPress={() => handlePress()}
-          style={opacityText}
-        />
+        <Link href="/new-contact" push asChild>
+          <FloatingCards
+            icon={<UserCircleIcon />}
+            label="New Contact"
+            onPress={() => handlePress()}
+            style={opacityText}
+          />
+        </Link>
       </Animated.View>
       <Animated.View
         style={[styles.actionButton, newGroupIcon, groupWidthStyle]}

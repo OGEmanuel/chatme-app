@@ -8,8 +8,9 @@ import { cn } from '@/lib/utils';
 import { faker } from '@faker-js/faker';
 import { SectionList } from '@legendapp/list/section-list';
 import { useField } from '@tanstack/react-form';
+import { Link, useRouter } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
-import { Image, useColorScheme, View } from 'react-native';
+import { Image, Pressable, useColorScheme, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 type Contact = {
@@ -19,7 +20,7 @@ type Contact = {
   phone: string;
 };
 
-const NewChatScreen = () => {
+const ContactScreen = () => {
   const colorScheme = useColorScheme();
   const insets = useSafeAreaInsets();
   const [renderedContacts, setRenderedContacts] = useState<
@@ -104,43 +105,46 @@ const NewChatScreen = () => {
 
   const RenderContactList = (props: { item: Contact }) => {
     const { item } = props;
+
     return (
-      <View className="px-6">
-        <View className="flex-1 flex-row items-center gap-2 ">
-          <View className="flex-1 flex-row items-center gap-4">
-            <View className="size-14 overflow-hidden rounded-full">
-              <Image
-                source={{
-                  uri: item.avatar,
-                }}
-                className="size-full"
+      <Link href={`/chat/${item.id}`} replace asChild>
+        <Pressable className="px-6">
+          <View className="flex-1 flex-row items-center gap-2 ">
+            <View className="flex-1 flex-row items-center gap-4">
+              <View className="size-14 overflow-hidden rounded-full">
+                <Image
+                  source={{
+                    uri: item.avatar,
+                  }}
+                  className="size-full"
+                />
+              </View>
+              <View className="flex-1 gap-1">
+                <TextCustom className="font-sf-pro-medium leading-[150%]">
+                  {item.name}
+                </TextCustom>
+                <TextCustom className="text-sm/[150%] tracking-[0.5px] dark:text-neutral-200">
+                  {item.phone}
+                </TextCustom>
+              </View>
+            </View>
+            <View
+              style={{
+                transform: [
+                  {
+                    rotate: '180deg',
+                  },
+                ],
+              }}
+            >
+              <ArrowLeftIcon
+                size={'20'}
+                stroke={Colors[colorScheme ?? 'light'].neutral[300]}
               />
             </View>
-            <View className="flex-1 gap-1">
-              <TextCustom className="font-sf-pro-medium leading-[150%]">
-                {item.name}
-              </TextCustom>
-              <TextCustom className="text-sm/[150%] tracking-[0.5px] dark:text-neutral-200">
-                {item.phone}
-              </TextCustom>
-            </View>
           </View>
-          <View
-            style={{
-              transform: [
-                {
-                  rotate: '180deg',
-                },
-              ],
-            }}
-          >
-            <ArrowLeftIcon
-              size={20}
-              stroke={Colors[colorScheme ?? 'light'].neutral[300]}
-            />
-          </View>
-        </View>
-      </View>
+        </Pressable>
+      </Link>
     );
   };
 
@@ -177,7 +181,7 @@ const NewChatScreen = () => {
     <View className="gap-6">
       <View className="z-10 bg-white dark:bg-neutral-700">
         <AndroidSheetGrabber />
-        <View className="px-6 pt-10">
+        <View className="gap-4 px-6 pt-10">
           <TextCustom className="text-center font-sf-pro-bold text-xl/5 leading-[125%]">
             Contact
           </TextCustom>
@@ -199,7 +203,7 @@ const NewChatScreen = () => {
                   'p-3',
                   searchField.state.value === ''
                     ? 'dark:border-neutral-300 border-other-divider'
-                    : 'border-primary-400 bg-primary-50 dark:bg-neutral-800',
+                    : '!border-primary-400 bg-primary-50 dark:bg-neutral-800',
                 )}
                 shouldHideError
                 inputProps={{
@@ -247,4 +251,4 @@ const NewChatScreen = () => {
   );
 };
 
-export default NewChatScreen;
+export default ContactScreen;
