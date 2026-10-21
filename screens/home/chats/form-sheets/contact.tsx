@@ -23,23 +23,20 @@ type Contact = {
 const ContactScreen = () => {
   const colorScheme = useColorScheme();
   const insets = useSafeAreaInsets();
+  const [contacts] = useState(() =>
+    Array.from({ length: 20 }, (_, i) => ({
+      id: i,
+      name: faker.person.fullName(),
+      avatar: faker.image.avatar(),
+      phone: faker.phone.number({ style: 'international' }),
+    })),
+  );
   const [renderedContacts, setRenderedContacts] = useState<
     {
       title: string;
       data: Contact[];
     }[]
   >([]);
-
-  const contacts = [];
-
-  for (let i = 0; i < 20; i++) {
-    contacts.push({
-      id: i,
-      name: faker.person.fullName(),
-      avatar: faker.image.avatar(),
-      phone: faker.phone.number({ style: 'international' }),
-    });
-  }
 
   const form = useAppForm({
     defaultValues: {
@@ -55,43 +52,38 @@ const ContactScreen = () => {
     form,
   });
 
-  const sectionContacts = (contacts: Contact[]) => {
+  const sections = useMemo(() => {
     const sorted = [...contacts].sort((a, b) => a.name.localeCompare(b.name));
 
     return Object.values(
       sorted.reduce<Record<string, { title: string; data: Contact[] }>>(
-        (sections, contact) => {
+        (acc, contact) => {
           const title = contact.name.charAt(0).toUpperCase();
 
-          if (!sections[title]) {
-            sections[title] = {
-              title,
-              data: [],
-            };
+          if (!acc[title]) {
+            acc[title] = { title, data: [] };
           }
 
-          sections[title].data.push(contact);
+          acc[title].data.push(contact);
 
-          return sections;
+          return acc;
         },
         {},
       ),
     );
-  };
-
-  const sections = sectionContacts(contacts);
+  }, [contacts]);
 
   const filteredContacts = useMemo(() => {
-    return sections.map(section => {
-      return {
+    const query = searchField.state.value.trim().toLowerCase();
+
+    return sections
+      .map(section => ({
         ...section,
         data: section.data.filter(contact =>
-          contact.name
-            .toLowerCase()
-            .includes(searchField.state.value.toLowerCase()),
+          contact.name.toLowerCase().includes(query),
         ),
-      };
-    });
+      }))
+      .filter(section => section.data.length > 0);
   }, [sections, searchField.state.value]);
 
   useEffect(() => {
@@ -231,7 +223,7 @@ const ContactScreen = () => {
         <RenderEmptyState />
       ) : (
         <SectionList
-          sections={renderedContacts}
+          sections={filteredContacts}
           keyExtractor={item => item.id.toString()}
           renderSectionHeader={({ section }) => {
             return searchField.state.value === '' ? (

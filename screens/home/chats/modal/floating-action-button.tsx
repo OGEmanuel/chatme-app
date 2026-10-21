@@ -37,39 +37,50 @@ const FloatingActionButton = () => {
   );
 
   const handlePress = () => {
+    const shouldOpen = !isOpen.value;
+
+    // Keep menu and backdrop in sync
+    isOpen.value = shouldOpen;
+    setBlurView(shouldOpen);
+
     const config = {
       easing: Easing.bezier(0.68, -0.6, 0.32, 1.6),
       duration: 300,
     };
 
-    if (isOpen.value) {
+    if (!shouldOpen) {
+      // Closing
       newGroupWidth.value = withTiming(56, { duration: 100 }, finish => {
         if (finish) {
           newChat.value = withTiming(30, config);
         }
       });
+
       newContactWidth.value = withTiming(56, { duration: 100 }, finish => {
         if (finish) {
           newContact.value = withDelay(50, withTiming(30, config));
         }
       });
+
       newChatWidth.value = withTiming(56, { duration: 100 }, finish => {
         if (finish) {
           newGroup.value = withDelay(100, withTiming(30, config));
         }
       });
+
       opacity.value = withTiming(0, { duration: 100 });
     } else {
+      // Opening
       newGroup.value = withDelay(200, withSpring(104));
       newContact.value = withDelay(100, withSpring(170));
       newChat.value = withSpring(236);
+
       newGroupWidth.value = withDelay(600, withSpring(160));
       newContactWidth.value = withDelay(500, withSpring(160));
       newChatWidth.value = withDelay(400, withSpring(160));
+
       opacity.value = withDelay(700, withSpring(1));
     }
-    isOpen.value = !isOpen.value;
-    setBlurView(!isOpen.value);
   };
 
   const opacityText = useAnimatedStyle(() => {
