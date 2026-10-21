@@ -33,6 +33,9 @@ module.exports = {
           warning: '#E8A13A',
           'white/90': '#FFFFFFE5',
         },
+        extra: {
+          100: '#E8F5ED',
+        },
       },
       fontFamily: {
         'sf-pro-display': ['SfPro'],

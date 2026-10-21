@@ -186,6 +186,22 @@ export default function RootLayout() {
               }}
             />
             <Stack.Screen
+              name="(form-sheets)/create-group"
+              options={{
+                presentation: 'formSheet',
+                sheetGrabberVisible: Platform.OS === 'android' ? false : true,
+                headerShown: false,
+                sheetCornerRadius: Platform.OS === 'android' ? 18 : undefined,
+                sheetAllowedDetents: 'fitToContents',
+                contentStyle: {
+                  backgroundColor:
+                    colorScheme === 'dark'
+                      ? Colors.dark.backgroundSecondary
+                      : Colors.light.backgroundSecondary,
+                },
+              }}
+            />
+            <Stack.Screen
               name="(tabs)"
               options={{
                 headerShown: false,

@@ -8,7 +8,7 @@ import { cn } from '@/lib/utils';
 import { faker } from '@faker-js/faker';
 import { SectionList } from '@legendapp/list/section-list';
 import { useField } from '@tanstack/react-form';
-import { Link, useRouter } from 'expo-router';
+import { Link } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import { Image, Pressable, useColorScheme, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';

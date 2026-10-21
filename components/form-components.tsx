@@ -142,6 +142,7 @@ export const TextField = (props: TextFieldProps) => {
           ))
         )}
         <TextInput
+          {...inputProps}
           className={cn(
             'ios:h-5 android:py-0 android:px-0 font-inter flex-1 font-sf-pro-medium text-sm/[150%] text-neutral-900 dark:text-white',
             inputProps?.className,
@@ -164,7 +165,6 @@ export const TextField = (props: TextFieldProps) => {
             field.handleChange(text);
             inputProps?.onChangeText?.(text);
           }}
-          {...inputProps}
         />
       </View>
       {field.state.meta.isTouched && !shouldHideError && (

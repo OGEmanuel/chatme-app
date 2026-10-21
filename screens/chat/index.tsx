@@ -110,6 +110,7 @@ const ChatUIScreen = () => {
               style={{
                 paddingBottom: keyboardVisible ? undefined : bottom + nudge,
               }}
+
               className="flex-1"
             >
               <View className="flex-1 justify-between">

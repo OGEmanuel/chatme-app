@@ -113,7 +113,7 @@ const NewContactScreen = () => {
               <PressableScale onPress={() => router.back()}>
                 <ArrowLeftIcon />
               </PressableScale>
-              <TextCustom className="font-sf-pro-bold text-lg/[125%]">
+              <TextCustom className="font-sf-pro-bold text-lg/[125%] !text-white">
                 New Contact
               </TextCustom>
               <View className="size-6" />
@@ -129,7 +129,7 @@ const NewContactScreen = () => {
             )}
           >
             <View className="flex-1 gap-6">
-              <View className="relative -mt-[5.5rem] size-[11rem] items-center justify-center self-center rounded-full border-4 border-neutral-900 bg-neutral-100">
+              <View className="relative -mt-[5.5rem] size-[11rem] items-center justify-center self-center rounded-full border-4 border-white bg-neutral-100 dark:border-neutral-900">
                 <UserIcon fill="white" size={'116'} />
                 <Link href="/(form-sheets)/edit-profile-picture" push asChild>
                   <PressableScale

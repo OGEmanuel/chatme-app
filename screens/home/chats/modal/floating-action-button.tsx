@@ -170,12 +170,14 @@ const FloatingActionButton = () => {
       <Animated.View
         style={[styles.actionButton, newGroupIcon, groupWidthStyle]}
       >
-        <FloatingCards
-          icon={<UserGroupIcon size={24} />}
-          label="New group"
-          onPress={() => {}}
-          style={opacityText}
-        />
+        <Link href="/(form-sheets)/create-group" push asChild>
+          <FloatingCards
+            icon={<UserGroupIcon size={24} />}
+            label="New group"
+            onPress={() => {}}
+            style={opacityText}
+          />
+        </Link>
       </Animated.View>
       <IconButton
         style={{
