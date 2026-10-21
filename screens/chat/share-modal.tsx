@@ -4,7 +4,7 @@ import LocationMarkerIcon from '@/assets/icons/jsx/location-marker-icon';
 import UserCircleIcon from '@/assets/icons/jsx/user-circle-icon';
 import PhotographIcon from '@/assets/icons/photograph-icon.svg';
 import TextCustom from '@/components/ui/text';
-import { getLocalUri, getPhotos } from '@/lib/utils';
+import { getLocalUri, getPhotos } from '@/lib/media/queries/utils';
 import { LegendList } from '@legendapp/list/react-native';
 import { useQuery } from '@tanstack/react-query';
 import * as Contacts from 'expo-contacts';

@@ -6,7 +6,7 @@ import { revalidateLogic } from '@tanstack/react-form';
 import * as Clipboard from 'expo-clipboard';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Alert, Pressable, View } from 'react-native';
+import { Alert, Platform, Pressable, View } from 'react-native';
 import z from 'zod';
 import AuthLayoutWrapper, {
   AuthLayoutHeader,
@@ -74,22 +74,21 @@ const VerifyScreen = () => {
     },
     onSubmit: ({ value }) => {
       router.push('/(auth)/name');
-      console.log('value', value);
-      // mutate(
-      //   {
-      //     challengeId,
-      //     code: value.otp,
-      //     device: {
-      //       name: 'Owner',
-      //       platform: Platform.OS,
-      //     },
-      //   },
-      //   {
-      //     onSuccess: () => {
-      //       router.push('/(auth)/name');
-      //     },
-      //   },
-      // );
+      mutate(
+        {
+          challengeId,
+          code: value.otp,
+          device: {
+            name: 'Owner',
+            platform: Platform.OS,
+          },
+        },
+        {
+          onSuccess: () => {
+            router.push('/(auth)/name');
+          },
+        },
+      );
     },
   });
 

@@ -25,8 +25,7 @@ const NameScreen = () => {
     validators: {
       onSubmit: formSchema,
     },
-    onSubmit: ({ value }) => {
-      console.log(value);
+    onSubmit: () => {
       router.push('/(auth)/upload');
     },
   });
