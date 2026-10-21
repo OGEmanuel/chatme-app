@@ -1,11 +1,26 @@
 import { getFullWidth } from '@/lib/utils';
 import { CameraView } from 'expo-camera';
 import { useEffect, useRef } from 'react';
-import { AppState, Linking, StyleSheet, View } from 'react-native';
+import { Alert, AppState, Linking, StyleSheet, View } from 'react-native';
 
 const ScanCode = () => {
   const qrLock = useRef(false);
   const appState = useRef(AppState.currentState);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isActive = useRef(true);
+
+  useEffect(() => {
+    isActive.current = true;
+
+    return () => {
+      isActive.current = false;
+
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
+      }
+    };
+  }, []);
 
   useEffect(() => {
     const subscription = AppState.addEventListener('change', nextAppState => {
@@ -23,6 +38,35 @@ const ScanCode = () => {
     };
   }, []);
 
+  const handleBarcodeScanned = ({ data }: { data: string }) => {
+    if (!data || qrLock.current || !isActive.current) return;
+
+    qrLock.current = true;
+
+    timeoutRef.current = setTimeout(async () => {
+      timeoutRef.current = null;
+
+      if (!isActive.current) {
+        qrLock.current = false;
+        return;
+      }
+
+      try {
+        await Linking.openURL(data);
+      } catch (error) {
+        console.error('Failed to open QR code URL:', error);
+
+        // Replace with your app's toast or alert.
+        Alert.alert(
+          'Unable to open link',
+          'Please try scanning the QR code again.',
+        );
+      } finally {
+        qrLock.current = false;
+      }
+    }, 500);
+  };
+
   return (
     <View
       style={{
@@ -33,14 +77,7 @@ const ScanCode = () => {
       <CameraView
         style={StyleSheet.absoluteFillObject}
         facing="back"
-        onBarcodeScanned={({ data }) => {
-          if (data && !qrLock.current) {
-            qrLock.current = true;
-            setTimeout(async () => {
-              await Linking.openURL(data);
-            }, 500);
-          }
-        }}
+        onBarcodeScanned={handleBarcodeScanned}
       />
     </View>
   );

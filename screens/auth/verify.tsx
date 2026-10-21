@@ -2,10 +2,11 @@ import TextCustom from '@/components/ui/text';
 import { useAppForm } from '@/hooks/form';
 import useSendRequest from '@/lib/hooks/useSendRequests';
 import { toast } from '@/lib/toast';
+import { getValidCountdown } from '@/lib/utils';
 import { revalidateLogic } from '@tanstack/react-form';
 import * as Clipboard from 'expo-clipboard';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Alert, Platform, Pressable, View } from 'react-native';
 import z from 'zod';
 import AuthLayoutWrapper, {
@@ -26,7 +27,7 @@ const VerifyScreen = () => {
     resendInSeconds: string;
     challengeId: string;
   }>();
-  const [timer, setTimer] = useState(parseInt(resendInSeconds) ?? 30);
+  const [timer, setTimer] = useState(() => getValidCountdown(resendInSeconds));
   const router = useRouter();
   const copyToClipboard = async (text: string) => {
     await Clipboard.setStringAsync(text);
@@ -55,14 +56,26 @@ const VerifyScreen = () => {
     },
   });
 
+  const deadlineRef = useRef(
+    Date.now() + getValidCountdown(resendInSeconds) * 1000,
+  );
+
   useEffect(() => {
-    if (timer === 0) return;
-    const interval = setInterval(() => {
-      setTimer(timer => timer - 1);
-    }, 1000);
+    const updateTimer = () => {
+      const remaining = Math.max(
+        0,
+        Math.ceil((deadlineRef.current - Date.now()) / 1000),
+      );
+
+      setTimer(remaining);
+    };
+
+    updateTimer();
+
+    const interval = setInterval(updateTimer, 1000);
 
     return () => clearInterval(interval);
-  }, [timer]);
+  }, []);
 
   const form = useAppForm({
     defaultValues: {

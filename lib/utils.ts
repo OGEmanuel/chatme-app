@@ -20,3 +20,19 @@ export const getCallingCode = (root: string, suffixes: string[]) => {
 export const filterByCountryName = (countryName: string) => {
   return countries.filter(country => country.name.common === countryName);
 };
+
+const DEFAULT_RESEND_SECONDS = 30;
+
+export const getValidCountdown = (value?: string | number) => {
+  if (value === undefined || value === null || value === '') {
+    return DEFAULT_RESEND_SECONDS;
+  }
+
+  const seconds = Number(value);
+
+  if (!Number.isFinite(seconds) || seconds < 0) {
+    return DEFAULT_RESEND_SECONDS;
+  }
+
+  return Math.floor(seconds);
+};
