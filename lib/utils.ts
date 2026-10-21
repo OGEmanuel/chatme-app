@@ -1,6 +1,3 @@
-import { QUERIES } from '@/screens/auth/lib/queries';
-import { QUERY_KEYS } from '@/screens/auth/lib/queries/key-factory';
-import { queryOptions } from '@tanstack/react-query';
 import { clsx, type ClassValue } from 'clsx';
 import { Dimensions } from 'react-native';
 import { twMerge } from 'tailwind-merge';
@@ -20,21 +17,22 @@ export const getCallingCode = (root: string, suffixes: string[]) => {
   return callingCode;
 };
 
-export const getLocalUri = (id: string) => {
-  return queryOptions({
-    queryKey: QUERY_KEYS.photos.byId(id),
-    queryFn: () => QUERIES.getLocalUri(id),
-    enabled: !!id,
-  });
-};
-
-export const getPhotos = (first?: number) => {
-  return queryOptions({
-    queryKey: QUERY_KEYS.photos.some(first),
-    queryFn: () => QUERIES.getPhotos(first),
-  });
-};
-
 export const filterByCountryName = (countryName: string) => {
   return countries.filter(country => country.name.common === countryName);
+};
+
+const DEFAULT_RESEND_SECONDS = 30;
+
+export const getValidCountdown = (value?: string | number) => {
+  if (value === undefined || value === null || value === '') {
+    return DEFAULT_RESEND_SECONDS;
+  }
+
+  const seconds = Number(value);
+
+  if (!Number.isFinite(seconds) || seconds < 0) {
+    return DEFAULT_RESEND_SECONDS;
+  }
+
+  return Math.floor(seconds);
 };

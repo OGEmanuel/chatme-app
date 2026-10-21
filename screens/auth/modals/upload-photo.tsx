@@ -3,7 +3,7 @@ import CameraIcon from '@/assets/icons/jsx/camera-icon';
 import PhotographIcon from '@/assets/icons/photograph-icon.svg';
 import ModalWrapper from '@/components/ui/modal-wrapper';
 import TextCustom from '@/components/ui/text';
-import { getLocalUri, getPhotos } from '@/lib/utils';
+import { getLocalUri, getPhotos } from '@/lib/media/queries/utils';
 import { LegendList } from '@legendapp/list/react-native';
 import { useQuery } from '@tanstack/react-query';
 import * as ImagePicker from 'expo-image-picker';
@@ -36,6 +36,9 @@ const UploadPhotoModal = (props: {
 
   const { data, isPending, isError } = useQuery({ ...getPhotos(10) });
 
+  const [cameraPermissionInformation, requestCameraPermission] =
+    useCameraPermissions();
+
   useEffect(() => {
     if (!permissionResponse?.granted) {
       requestPermission();
@@ -53,9 +56,6 @@ const UploadPhotoModal = (props: {
       setOpenModal(false);
     }
   };
-
-  const [cameraPermissionInformation, requestCameraPermission] =
-    useCameraPermissions();
 
   const verifyPermissions = async () => {
     if (cameraPermissionInformation?.status === PermissionStatus.UNDETERMINED) {

@@ -40,6 +40,9 @@ export const Colors = {
       warning: '#E8A13A',
       'white/90': '#FFFFFFE5',
     },
+    extra: {
+      100: '#E8F5ED',
+    },
   },
   dark: {
     text: '#ECEDEE',
@@ -71,6 +74,9 @@ export const Colors = {
       divider: '#EAEEF2',
       warning: '#E8A13A',
       'white/90': '#FFFFFFE5',
+    },
+    extra: {
+      100: '#E8F5ED',
     },
   },
 };

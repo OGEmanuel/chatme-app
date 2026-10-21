@@ -81,38 +81,38 @@ export default function RootLayout() {
               },
             }}
           >
-            <Stack.Protected guard={false}>
-              <Stack.Screen
-                name="index"
-                options={{
-                  headerShown: false,
-                }}
-              />
-              <Stack.Screen
-                name="(auth)/sign-in"
-                options={{
-                  headerShown: false,
-                }}
-              />
-              <Stack.Screen
-                name="(auth)/verify"
-                options={{
-                  headerShown: false,
-                }}
-              />
-              <Stack.Screen
-                name="(auth)/name"
-                options={{
-                  headerShown: false,
-                }}
-              />
-              <Stack.Screen
-                name="(auth)/upload"
-                options={{
-                  headerShown: false,
-                }}
-              />
-            </Stack.Protected>
+            {/* <Stack.Protected guard={false}> */}
+            <Stack.Screen
+              name="index"
+              options={{
+                headerShown: false,
+              }}
+            />
+            <Stack.Screen
+              name="(auth)/sign-in"
+              options={{
+                headerShown: false,
+              }}
+            />
+            <Stack.Screen
+              name="(auth)/verify"
+              options={{
+                headerShown: false,
+              }}
+            />
+            <Stack.Screen
+              name="(auth)/name"
+              options={{
+                headerShown: false,
+              }}
+            />
+            <Stack.Screen
+              name="(auth)/upload"
+              options={{
+                headerShown: false,
+              }}
+            />
+            {/* </Stack.Protected> */}
             <Stack.Screen
               name="(form-sheets)/world-countries"
               options={{
@@ -171,6 +171,22 @@ export default function RootLayout() {
             />
             <Stack.Screen
               name="(form-sheets)/edit-profile-picture"
+              options={{
+                presentation: 'formSheet',
+                sheetGrabberVisible: Platform.OS === 'android' ? false : true,
+                headerShown: false,
+                sheetCornerRadius: Platform.OS === 'android' ? 18 : undefined,
+                sheetAllowedDetents: 'fitToContents',
+                contentStyle: {
+                  backgroundColor:
+                    colorScheme === 'dark'
+                      ? Colors.dark.backgroundSecondary
+                      : Colors.light.backgroundSecondary,
+                },
+              }}
+            />
+            <Stack.Screen
+              name="(form-sheets)/create-group"
               options={{
                 presentation: 'formSheet',
                 sheetGrabberVisible: Platform.OS === 'android' ? false : true,

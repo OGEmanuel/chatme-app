@@ -14,6 +14,7 @@ import {
   ImageBackground,
   Keyboard,
   KeyboardAvoidingView,
+  Platform,
   StyleSheet,
   TextInput,
   useColorScheme,
@@ -46,13 +47,23 @@ const ChatUIScreen = () => {
   useEffect(() => forceRelayout(), []);
 
   useEffect(() => {
-    const showSubscription = Keyboard.addListener('keyboardWillShow', () => {
-      setKeyboardVisible(true);
-    });
+    const showSubscription = Keyboard.addListener(
+      Platform.select({
+        ios: 'keyboardWillShow',
+        android: 'keyboardDidShow',
+        default: 'keyboardDidShow',
+      })!,
+      () => setKeyboardVisible(true),
+    );
 
-    const hideSubscription = Keyboard.addListener('keyboardWillHide', () => {
-      setKeyboardVisible(false);
-    });
+    const hideSubscription = Keyboard.addListener(
+      Platform.select({
+        ios: 'keyboardWillHide',
+        android: 'keyboardDidHide',
+        default: 'keyboardDidHide',
+      })!,
+      () => setKeyboardVisible(false),
+    );
 
     return () => {
       showSubscription.remove();
@@ -110,6 +121,7 @@ const ChatUIScreen = () => {
               style={{
                 paddingBottom: keyboardVisible ? undefined : bottom + nudge,
               }}
+
               className="flex-1"
             >
               <View className="flex-1 justify-between">

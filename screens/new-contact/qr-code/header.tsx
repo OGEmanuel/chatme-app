@@ -3,7 +3,7 @@ import TextCustom from '@/components/ui/text';
 import { cn } from '@/lib/utils';
 import { useRouter } from 'expo-router';
 import { PressableScale } from 'pressto';
-import { Pressable, View } from 'react-native';
+import { Pressable, useColorScheme, View } from 'react-native';
 
 const Header = (props: {
   activeTab: number;
@@ -11,6 +11,7 @@ const Header = (props: {
 }) => {
   const { activeTab, goToPage } = props;
   const router = useRouter();
+  const colorScheme = useColorScheme();
   return (
     <View className="gap-6 pt-4">
       <PressableScale
@@ -19,31 +20,35 @@ const Header = (props: {
         }}
         onPress={() => router.back()}
       >
-        <ArrowLeftIcon />
+        <ArrowLeftIcon stroke={colorScheme === 'dark' ? 'white' : 'black'} />
       </PressableScale>
       <View
         style={{
           boxShadow: '0px 4px 24px 0px #27443105',
         }}
-        className="flex-row items-center bg-neutral-800"
+        className="flex-row items-center bg-primary-400 dark:bg-neutral-800"
       >
         <Pressable
           className={cn(
             'flex-1 items-center border-b-2 border-transparent py-6',
-            activeTab === 0 && ' border-primary-400',
+            activeTab === 0 && ' border-neutral-300 dark:border-primary-400',
           )}
           onPress={() => goToPage(0)}
         >
-          <TextCustom>My Code</TextCustom>
+          <TextCustom className="font-sf-pro-medium text-lg !text-white">
+            My Code
+          </TextCustom>
         </Pressable>
         <Pressable
           onPress={() => goToPage(1)}
           className={cn(
             'flex-1 items-center border-b-2  border-transparent py-6',
-            activeTab === 1 && 'border-primary-400',
+            activeTab === 1 && 'border-neutral-300 dark:border-primary-400',
           )}
         >
-          <TextCustom>Scan Code</TextCustom>
+          <TextCustom className="font-sf-pro-medium text-lg !text-white">
+            Scan Code
+          </TextCustom>
         </Pressable>
       </View>
     </View>
