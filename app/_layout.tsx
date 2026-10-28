@@ -1,6 +1,7 @@
 import { toastConfig } from '@/components/toast/app-toast';
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import { useAuthStore } from '@/screens/auth/store/auth-store';
 import {
   DarkTheme,
   DefaultTheme,
@@ -45,6 +46,10 @@ SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
+  const loggedIn = useAuthStore(state => state.isLoggedIn);
+  const hasCompletedOnboarding = useAuthStore(
+    state => state.hasCompletedOnboarding,
+  );
 
   const [fontsLoaded] = useFonts({
     SfPro: require('../assets/fonts/sf-pro-display/SFPRODISPLAYREGULAR.otf'),
@@ -81,38 +86,52 @@ export default function RootLayout() {
               },
             }}
           >
-            {/* <Stack.Protected guard={false}> */}
-            <Stack.Screen
-              name="index"
-              options={{
-                headerShown: false,
-              }}
-            />
-            <Stack.Screen
-              name="(auth)/sign-in"
-              options={{
-                headerShown: false,
-              }}
-            />
-            <Stack.Screen
-              name="(auth)/verify"
-              options={{
-                headerShown: false,
-              }}
-            />
-            <Stack.Screen
-              name="(auth)/name"
-              options={{
-                headerShown: false,
-              }}
-            />
-            <Stack.Screen
-              name="(auth)/upload"
-              options={{
-                headerShown: false,
-              }}
-            />
-            {/* </Stack.Protected> */}
+            <Stack.Protected guard={!hasCompletedOnboarding}>
+              <Stack.Screen
+                name="index"
+                options={{
+                  headerShown: false,
+                }}
+              />
+            </Stack.Protected>
+            <Stack.Protected guard={!loggedIn}>
+              <Stack.Screen
+                name="(auth)/sign-in"
+                options={{
+                  headerShown: false,
+                }}
+              />
+              <Stack.Screen
+                name="(auth)/verify"
+                options={{
+                  headerShown: false,
+                }}
+              />
+            </Stack.Protected>
+
+            <Stack.Protected guard={!hasCompletedOnboarding}>
+              <Stack.Screen
+                name="(auth)/name"
+                options={{
+                  headerShown: false,
+                }}
+              />
+              <Stack.Screen
+                name="(auth)/upload"
+                options={{
+                  headerShown: false,
+                }}
+              />
+            </Stack.Protected>
+            <Stack.Protected guard={loggedIn}>
+              <Stack.Screen
+                name="(tabs)"
+                options={{
+                  headerShown: false,
+                }}
+              />
+            </Stack.Protected>
+
             <Stack.Screen
               name="(form-sheets)/world-countries"
               options={{
@@ -199,12 +218,6 @@ export default function RootLayout() {
                       ? Colors.dark.backgroundSecondary
                       : Colors.light.backgroundSecondary,
                 },
-              }}
-            />
-            <Stack.Screen
-              name="(tabs)"
-              options={{
-                headerShown: false,
               }}
             />
           </Stack>

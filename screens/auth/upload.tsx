@@ -13,6 +13,7 @@ import IllustrationDark from './assets/icons/upload-illustration-dark.svg';
 import Illustration from './assets/icons/upload-illustration.svg';
 import UploadImageIcon from './assets/icons/upload-image-icon.svg';
 import UploadPhotoModal from './modals/upload-photo';
+import { useAuthStore } from './store/auth-store';
 import { usePhotoControlStore } from './store/photo-control-store';
 
 const UploadScreen = () => {
@@ -20,9 +21,11 @@ const UploadScreen = () => {
   const [openModal, setOpenModal] = useState(false);
   const { photoUri } = usePhotoControlStore();
   const router = useRouter();
+  const completeOnboarding = useAuthStore(state => state.completeOnboarding);
 
   const handlePress = () => {
     if (photoUri) {
+      completeOnboarding();
       router.push({
         pathname: '/(tabs)/chats',
       });

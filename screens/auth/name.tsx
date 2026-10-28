@@ -7,6 +7,7 @@ import AuthLayoutWrapper, {
   AuthLayoutHeader,
   AuthLayoutInnerWrapper,
 } from './components/layout-wrapper';
+import { useAuthStore } from './store/auth-store';
 
 const formSchema = z.object({
   name: z.string().min(2, {
