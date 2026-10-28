@@ -57,12 +57,6 @@ const SignInScreen = () => {
         filterByCountryName(countryName)[0].idd.root,
         filterByCountryName(countryName)[0].idd.suffixes,
       )}${value.phoneNumber}`;
-
-      router.push({
-        pathname: '/(auth)/verify',
-        params: { phone: phoneNumber },
-      });
-
       mutate(
         { phoneNumber },
         {

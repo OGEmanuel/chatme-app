@@ -14,6 +14,7 @@ import AuthLayoutWrapper, {
   AuthLayoutInnerWrapper,
 } from './components/layout-wrapper';
 import { MUTATIONS } from './lib/queries';
+import { useAuthStore } from './store/auth-store';
 
 const formSchema = z.object({
   otp: z.string().min(4, {
@@ -32,6 +33,7 @@ const VerifyScreen = () => {
   const copyToClipboard = async (text: string) => {
     await Clipboard.setStringAsync(text);
   };
+  const logIn = useAuthStore(state => state.logIn);
 
   const { mutate, isPending } = useSendRequest<
     {
@@ -86,7 +88,6 @@ const VerifyScreen = () => {
       onSubmit: formSchema,
     },
     onSubmit: ({ value }) => {
-      router.push('/(auth)/name');
       mutate(
         {
           challengeId,
@@ -97,7 +98,11 @@ const VerifyScreen = () => {
           },
         },
         {
-          onSuccess: () => {
+          onSuccess: data => {
+            logIn({
+              accessToken: data.accessToken,
+              refreshToken: data.refreshToken,
+            });
             router.push('/(auth)/name');
           },
         },
