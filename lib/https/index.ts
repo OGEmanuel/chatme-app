@@ -1,5 +1,6 @@
 import { useAuthStore } from '@/screens/auth/store/auth-store';
 import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
+import { AuthResponse } from './type';
 
 const BASE_URL = process.env.EXPO_PUBLIC_API_URL;
 
@@ -26,20 +27,20 @@ const refreshAccessToken = async (): Promise<string> => {
   const { refreshToken } = useAuthStore.getState();
   if (!refreshToken) throw new Error('No refresh token');
 
-  const { data } = await refreshClient.post('/auth/refresh', {
-    refresh_token: refreshToken,
+  const { data } = await refreshClient.post<AuthResponse>('/auth/refresh', {
+    refreshToken: refreshToken,
   });
   useAuthStore.getState().setTokens({
-    accessToken: data.access_token,
-    refreshToken: data.refresh_token,
+    accessToken: data.accessToken,
+    refreshToken: data.refreshToken,
   });
 
-  return data.access_token;
+  return data.accessToken;
 };
 
 let refreshPromise: Promise<string> | null = null;
 
-const getFreshAccessToken = () => {
+export const getFreshAccessToken = () => {
   if (!refreshPromise) {
     refreshPromise = refreshAccessToken().finally(() => {
       refreshPromise = null;

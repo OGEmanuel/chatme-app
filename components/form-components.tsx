@@ -4,7 +4,7 @@ import { useFieldContext, useFormContext } from '@/hooks/form-contexts';
 import { cn } from '@/lib/utils';
 import { useSelector } from '@tanstack/react-form';
 import { Link } from 'expo-router';
-import { useEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import {
   Pressable,
   TextInput,
@@ -150,7 +150,7 @@ export const TextField = (props: TextFieldProps) => {
           placeholderTextColor={
             colorScheme === 'dark'
               ? Colors.dark.neutral[300]
-              : Colors.light.neutral[200]
+              : Colors.light.other['white/90']
           }
           ref={inputRef}
           value={field.state.value}
@@ -184,12 +184,6 @@ export const OTPField = (props: {
   const field = useFieldContext<string>();
   const errors = useSelector(field.store, state => state.meta.errors);
   const code = field.state.value;
-
-  useEffect(() => {
-    if (!isFocused) {
-      inputRef.current?.focus();
-    }
-  }, [isFocused, inputRef]);
 
   const handleChange = (text: string) => {
     const cleaned = text.replace(/[^0-9]/g, '');

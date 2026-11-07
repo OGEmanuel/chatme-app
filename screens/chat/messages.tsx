@@ -1,14 +1,20 @@
 import TextCustom from '@/components/ui/text';
 import { cn } from '@/lib/utils';
 import { LegendList, LegendListRef } from '@legendapp/list/react-native';
-import { useEffect, useRef } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { useEffect, useMemo, useRef } from 'react';
 import { NativeScrollEvent, NativeSyntheticEvent, View } from 'react-native';
+import { getMe } from '../home/settings/utils/queries/options';
+import { getMessages } from './lib/queries/options';
+import { useConvoControlStore } from './lib/store/convo-control-store';
+import { ChatListItem } from './lib/types';
+import { format24HrTime, getDateLabel } from './lib/utils';
 
 type Message = {
-  id: number;
+  id: string;
   text: string;
   time: string;
-  you?: boolean;
+  you: boolean;
 };
 
 const DUMMY_MESSAGES = [
@@ -59,9 +65,13 @@ const DUMMY_MESSAGES = [
 
 const Messages = (props: { isKeyboardVisible: boolean }) => {
   const { isKeyboardVisible } = props;
+  const convoResponse = useConvoControlStore(state => state.convoResponse);
+  const { data: userData } = useQuery({ ...getMe() });
+  const { data } = useQuery({
+    ...getMessages(convoResponse?.id!!),
+  });
   const legendListRef = useRef<LegendListRef>(null);
   const isAtBottom = useRef(true);
-
   const handleScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
     const { contentOffset, contentSize, layoutMeasurement } = event.nativeEvent;
 
@@ -70,6 +80,44 @@ const Messages = (props: { isKeyboardVisible: boolean }) => {
 
     isAtBottom.current = distanceFromBottom < 50;
   };
+
+  const messages = data?.items
+    .slice()
+    .reverse()
+    .map(message => ({
+      id: message.id,
+      text: message.text,
+      time: message.createdAt,
+      you: message.senderId === userData?.id,
+    }));
+
+  const groupedMessages = useMemo(() => {
+    const result: ChatListItem[] = [];
+    let currentDate = '';
+
+    messages?.forEach(message => {
+      const date = new Date(message.time);
+      const dateKey = `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
+
+      if (dateKey !== currentDate) {
+        currentDate = dateKey;
+
+        result.push({
+          type: 'date',
+          id: `date-${dateKey}`,
+          title: getDateLabel(message.time),
+        });
+      }
+
+      result.push({
+        type: 'message',
+        id: message.id,
+        message,
+      });
+    });
+
+    return result;
+  }, [messages]);
 
   useEffect(() => {
     if (isAtBottom.current) {
@@ -103,7 +151,7 @@ const Messages = (props: { isKeyboardVisible: boolean }) => {
             boxShadow: '0px 3px 8px 0px #18342103',
           }}
           className={cn(
-            'max-w-60 rounded-t-2xl  px-4 py-3',
+            'max-w-60 rounded-t-2xl px-4 py-3',
             item.you
               ? 'rounded-bl-2xl bg-primary-400'
               : 'rounded-br-2xl bg-white dark:bg-neutral-800',
@@ -121,7 +169,7 @@ const Messages = (props: { isKeyboardVisible: boolean }) => {
         <TextCustom
           className={'font-sf-pro-medium text-sm/[150%] !text-neutral-300'}
         >
-          {item.time}
+          {format24HrTime(item.time)}
         </TextCustom>
       </View>
     );
@@ -130,7 +178,7 @@ const Messages = (props: { isKeyboardVisible: boolean }) => {
   return (
     <View className="flex-1">
       <LegendList
-        data={DUMMY_MESSAGES}
+        data={groupedMessages}
         showsVerticalScrollIndicator={false}
         ref={legendListRef}
         keyExtractor={item => item.id.toString()}
@@ -145,7 +193,19 @@ const Messages = (props: { isKeyboardVisible: boolean }) => {
           paddingVertical: 28,
         }}
         recycleItems={true}
-        renderItem={({ item }) => <RenderMessage item={item} />}
+        renderItem={({ item }) => {
+          if (item.type === 'date') {
+            return (
+              <View className="items-center py-2">
+                <TextCustom className="text-xs text-neutral-300">
+                  {item.title}
+                </TextCustom>
+              </View>
+            );
+          }
+
+          return <RenderMessage item={item.message} />;
+        }}
         onContentSizeChange={() => {
           if (isAtBottom.current) {
             legendListRef.current?.scrollToEnd({ animated: false });

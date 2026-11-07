@@ -9,10 +9,11 @@ import { Colors } from '@/constants/theme';
 import { cn } from '@/lib/utils';
 import { Link, useRouter } from 'expo-router';
 import { PressableScale } from 'pressto';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Image, Pressable, useColorScheme, View } from 'react-native';
 import Swipeable from 'react-native-gesture-handler/ReanimatedSwipeable';
 import { ChatItemProps } from '../constants/type';
+import { formatTime } from '../lib/utils';
 
 export const ChatItem = ({
   item,
@@ -22,11 +23,11 @@ export const ChatItem = ({
 }: ChatItemProps) => {
   const [dragged, setDragged] = useState(false);
   const colorScheme = useColorScheme();
-  const isSelected = selected?.includes(item.id);
+  const isSelected = selected?.includes(item.message?.id!!);
   const router = useRouter();
   const inSelectionMode = selected?.length!! > 0;
 
-  const toggleSelection = (id: number) => {
+  const toggleSelection = (id: string) => {
     if (isArchived) return;
     if (onSetSelected) {
       onSetSelected(prev =>
@@ -36,16 +37,16 @@ export const ChatItem = ({
   };
 
   const handleLongPress = () => {
-    toggleSelection(item.id);
+    toggleSelection(item.message?.id!!);
   };
 
   const handlePress = () => {
     if (!inSelectionMode) {
-      router.push(`/chat/${item.id}`);
+      router.push(`/chat/${item.otherParticipantId}`);
       return;
     }
 
-    toggleSelection(item.id);
+    toggleSelection(item.message?.id!!);
   };
   // const handlePress = () => {
   //   if (inSelectionMode) {
@@ -77,15 +78,19 @@ export const ChatItem = ({
           <View
             className={cn(
               'size-full overflow-hidden rounded-full',
-              item.group && 'border border-neutral-800',
+              item.type === 'group' && 'border border-neutral-800',
             )}
           >
-            <Image
-              source={{
-                uri: item.avatar,
-              }}
-              className="size-full"
-            />
+            {item.avatar ? (
+              <Image
+                source={{
+                  uri: item.avatar,
+                }}
+                className="size-full"
+              />
+            ) : (
+              <View className="size-full" />
+            )}
           </View>
           {item.online && (
             <View className="absolute bottom-0 right-0 size-4 rounded-full border-2 border-white bg-primary-400 dark:border-neutral-900" />
@@ -94,12 +99,12 @@ export const ChatItem = ({
         <View className="flex-1 gap-1">
           <View className="flex-row items-center gap-2">
             <View className="flex-1 flex-row items-center gap-2">
-              {item.group && <UserGroupIcon />}
+              {item.type === 'group' && <UserGroupIcon />}
               <View className="flex-row items-center gap-1">
                 <TextCustom className="font-sf-pro-medium leading-[150%]">
                   {item.name}
                 </TextCustom>
-                {item.muted && (
+                {item.settings.muted && (
                   <VolumeOffIcon
                     fill={
                       colorScheme === 'dark'
@@ -113,12 +118,12 @@ export const ChatItem = ({
             <TextCustom
               className={cn(
                 'text-sm/[150%] tracking-[0.5px]',
-                item.unread
+                item.unreadCount > 0
                   ? '!text-primary-400'
                   : 'text-neutral-300 dark:text-neutral-200',
               )}
             >
-              {item.time}
+              {formatTime(item.message?.createdAt!!)}
             </TextCustom>
           </View>
           <View className="flex-row items-center">
@@ -126,10 +131,10 @@ export const ChatItem = ({
               {item.you && (
                 <TextCustom className="leading-[150%]">You:</TextCustom>
               )}{' '}
-              {item.message}
+              {item.message?.preview}
             </TextCustom>
             <View className="flex-row items-center gap-1">
-              {item.pinned && (
+              {item.settings.pinned && (
                 <PushPin
                   size={20}
                   fill={
@@ -139,7 +144,7 @@ export const ChatItem = ({
                   }
                 />
               )}
-              {item.unreadCount && (
+              {item.unreadCount > 0 && (
                 <View className="size-6 items-center justify-center rounded-full bg-primary-400">
                   <TextCustom className="font-sf-pro-medium text-sm/[150%] !text-white">
                     {item.unreadCount}
