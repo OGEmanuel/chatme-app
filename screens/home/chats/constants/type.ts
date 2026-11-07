@@ -1,5 +1,10 @@
+import {
+  ConversationSettings,
+  Message,
+} from '@/screens/chat/lib/queries/types';
+
 type Chat = {
-  id: number;
+  id: string;
   name: string;
   time: string;
   message: string;
@@ -14,15 +19,29 @@ type Chat = {
   type: 'chat';
 };
 
+type ItemType = {
+  id: string;
+  name: string;
+  time: string;
+  otherParticipantId: string;
+  message: Message | null;
+  type: 'direct' | 'group';
+  unreadCount: number;
+  online: boolean;
+  you: boolean;
+  settings: ConversationSettings;
+  avatar: string | null;
+};
+
 export type ChatItemProps =
   | {
-      item: Chat;
-      selected: number[];
-      onSetSelected: React.Dispatch<React.SetStateAction<number[]>>;
+      item: ItemType;
+      selected: string[];
+      onSetSelected: React.Dispatch<React.SetStateAction<string[]>>;
       isArchived?: never;
     }
   | {
-      item: Chat;
+      item: ItemType;
       isArchived?: boolean;
       selected?: never;
       onSetSelected?: never;
@@ -30,7 +49,7 @@ export type ChatItemProps =
 
 export type ListItem =
   | {
-      id: number;
+      id: string;
       type: 'archived';
     }
-  | Chat;
+  | Message;

@@ -17,6 +17,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import 'react-native-reanimated';
 import Toast from 'react-native-toast-message';
 import '../global.css';
+import { startSocketLifecycle } from '@/screens/chat/lib/sockets/lifecycle';
 
 const NavigationLightTheme = {
   ...DefaultTheme,
@@ -50,7 +51,6 @@ export default function RootLayout() {
   const hasCompletedOnboarding = useAuthStore(
     state => state.hasCompletedOnboarding,
   );
-
   const [fontsLoaded] = useFonts({
     SfPro: require('../assets/fonts/sf-pro-display/SFPRODISPLAYREGULAR.otf'),
     SfProMedium: require('../assets/fonts/sf-pro-display/SFPRODISPLAYMEDIUM.otf'),
@@ -62,6 +62,11 @@ export default function RootLayout() {
       SplashScreen.hideAsync();
     }
   }, [fontsLoaded]);
+
+  useEffect(() => {
+    if (!loggedIn) return;
+    return startSocketLifecycle();
+  }, [loggedIn]);
 
   if (!fontsLoaded) return null;
 

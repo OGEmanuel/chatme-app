@@ -4,14 +4,17 @@ import AndroidSheetGrabber from '@/components/android-sheet-grabber';
 import TextCustom from '@/components/ui/text';
 import { Colors } from '@/constants/theme';
 import { useAppForm } from '@/hooks/form';
+import { useDebounce } from '@/lib/hooks/use-debounce';
 import { cn } from '@/lib/utils';
 import { faker } from '@faker-js/faker';
-import { SectionList } from '@legendapp/list/section-list';
 import { useField } from '@tanstack/react-form';
+import { useQuery } from '@tanstack/react-query';
 import { Link } from 'expo-router';
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Image, Pressable, useColorScheme, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { getSearchContacts } from '../lib/queries/options';
+import { SearchContacts } from '../lib/queries/type';
 
 type Contact = {
   id: number;
@@ -21,6 +24,8 @@ type Contact = {
 };
 
 const ContactScreen = () => {
+  const [searchText, setSearchText] = useState('');
+  const debouncedSearchText = useDebounce(searchText, 500);
   const colorScheme = useColorScheme();
   const insets = useSafeAreaInsets();
   const [contacts] = useState(() =>
@@ -38,6 +43,14 @@ const ContactScreen = () => {
     }[]
   >([]);
 
+  const { data } = useQuery({ ...getSearchContacts(debouncedSearchText) });
+  // const getToken = useAuthStore({})
+
+  // console.log(debouncedSearchText);
+
+  // console.log(JSON.stringify(data, null, 2));
+  // console.log(data);
+
   const form = useAppForm({
     defaultValues: {
       search: '',
@@ -53,12 +66,15 @@ const ContactScreen = () => {
   });
 
   const sections = useMemo(() => {
-    const sorted = [...contacts].sort((a, b) => a.name.localeCompare(b.name));
+    if (!data) return;
+    const sorted = [...data?.items].sort((a, b) =>
+      a.displayName.localeCompare(b.displayName),
+    );
 
     return Object.values(
-      sorted.reduce<Record<string, { title: string; data: Contact[] }>>(
+      sorted.reduce<Record<string, { title: string; data: SearchContacts[] }>>(
         (acc, contact) => {
-          const title = contact.name.charAt(0).toUpperCase();
+          const title = contact.displayName.charAt(0).toUpperCase();
 
           if (!acc[title]) {
             acc[title] = { title, data: [] };
@@ -71,31 +87,35 @@ const ContactScreen = () => {
         {},
       ),
     );
-  }, [contacts]);
+  }, [data]);
 
   const filteredContacts = useMemo(() => {
-    const query = searchField.state.value.trim().toLowerCase();
+    const query = debouncedSearchText;
+    if (!sections) return;
 
     return sections
       .map(section => ({
         ...section,
         data: section.data.filter(contact =>
-          contact.name.toLowerCase().includes(query),
+          contact.displayName.toLowerCase().includes(query),
         ),
       }))
       .filter(section => section.data.length > 0);
-  }, [sections, searchField.state.value]);
+  }, [sections, debouncedSearchText]);
 
-  useEffect(() => {
-    if (searchField.state.value === '') {
-      setRenderedContacts(sections);
-    }
-    {
-      setRenderedContacts(filteredContacts);
-    }
-  }, [searchField.state.value]);
+  console.log(filteredContacts);
 
-  const RenderContactList = (props: { item: Contact }) => {
+  // useEffect(() => {
+  //   if (searchField.state.value === '') {
+  //     setRenderedContacts(sections);
+  //   }
+  //   {
+  //     setRenderedContacts(filteredContacts);
+  //   }
+  //   // setSearchText(searchField.state.value);
+  // }, [searchField.state.value]);
+
+  const RenderContactList = (props: { item: SearchContacts }) => {
     const { item } = props;
 
     return (
@@ -106,17 +126,17 @@ const ContactScreen = () => {
               <View className="size-14 overflow-hidden rounded-full">
                 <Image
                   source={{
-                    uri: item.avatar,
+                    uri: item.avatarUrl,
                   }}
                   className="size-full"
                 />
               </View>
               <View className="flex-1 gap-1">
                 <TextCustom className="font-sf-pro-medium leading-[150%]">
-                  {item.name}
+                  {item.displayName}
                 </TextCustom>
                 <TextCustom className="text-sm/[150%] tracking-[0.5px] dark:text-neutral-200">
-                  {item.phone}
+                  +2348123456789
                 </TextCustom>
               </View>
             </View>
@@ -161,13 +181,13 @@ const ContactScreen = () => {
     );
   };
 
-  const isRenderedContactsEmpty = (
-    sections: { data: Contact[] }[],
-  ): boolean => {
-    return sections.every(section => section.data.length === 0);
-  };
+  // const isRenderedContactsEmpty = (
+  //   sections: { data: SearchContacts[] }[],
+  // ): boolean => {
+  //   return sections.every(section => section.data.length === 0);
+  // };
 
-  const isEmpty = isRenderedContactsEmpty(renderedContacts);
+  // const isEmpty = isRenderedContactsEmpty(filteredContacts!!);
 
   return (
     <View className="gap-6">
@@ -199,6 +219,9 @@ const ContactScreen = () => {
                 )}
                 shouldHideError
                 inputProps={{
+                  onChangeText: value => {
+                    setSearchText(value);
+                  },
                   autoCapitalize: 'none',
                   autoCorrect: false,
                   autoComplete: 'off',
@@ -219,26 +242,28 @@ const ContactScreen = () => {
           </form.AppField>
         </View>
       </View>
-      {isEmpty ? (
+      {/* {isEmpty ? (
         <RenderEmptyState />
       ) : (
-        <SectionList
-          sections={filteredContacts}
-          keyExtractor={item => item.id.toString()}
-          renderSectionHeader={({ section }) => {
-            return searchField.state.value === '' ? (
-              <RenderSectionHeader section={section.title} />
-            ) : null;
-          }}
-          nestedScrollEnabled={true}
-          contentContainerStyle={{
-            paddingBottom: insets.bottom + 200,
-            gap: 16,
-          }}
-          showsVerticalScrollIndicator={false}
-          renderItem={({ item }) => <RenderContactList item={item} />}
-        />
-      )}
+        filteredContacts && (
+          <SectionList
+            sections={filteredContacts}
+            keyExtractor={item => item.id.toString()}
+            renderSectionHeader={({ section }) => {
+              return searchField.state.value === '' ? (
+                <RenderSectionHeader section={section.title} />
+              ) : null;
+            }}
+            nestedScrollEnabled={true}
+            contentContainerStyle={{
+              paddingBottom: insets.bottom + 200,
+              gap: 16,
+            }}
+            showsVerticalScrollIndicator={false}
+            renderItem={({ item }) => <RenderContactList item={item} />}
+          />
+        )
+      )} */}
     </View>
   );
 };

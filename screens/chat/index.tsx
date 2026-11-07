@@ -5,11 +5,17 @@ import PhoneIcon from '@/assets/icons/jsx/phone-icon';
 import VideoCameraIcon from '@/assets/icons/jsx/video-camera-icon';
 import TextCustom from '@/components/ui/text';
 import { Colors } from '@/constants/theme';
+import useSendRequest from '@/lib/hooks/useSendRequests';
+import { toast } from '@/lib/toast';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { isAxiosError } from 'axios';
 import { BlurView } from 'expo-blur';
-import { useRouter } from 'expo-router';
+import * as Crypto from 'expo-crypto';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { PressableScale } from 'pressto';
 import { useCallback, useEffect, useState } from 'react';
 import {
+  ActivityIndicator,
   Image,
   ImageBackground,
   Keyboard,
@@ -22,20 +28,150 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Header from '../components/header';
+import { getMe } from '../home/settings/utils/queries/options';
+import { MUTATIONS } from './lib/queries';
+import { QUERY_KEYS } from './lib/queries/key-factory';
+import type {
+  ConversationResponse,
+  Message,
+  MessagesResponse,
+} from './lib/queries/types';
+import { useConversationSubscription } from './lib/sockets/use-conversation-realtime';
+import { useMessageSync } from './lib/sockets/use-message-sync';
+import { useTypingEmitter } from './lib/sockets/use-type-emitter';
+import { useConvoControlStore } from './lib/store/convo-control-store';
+import {
+  useIsOnline,
+  useIsTyping,
+  useSocketStore,
+} from './lib/store/sockets-control-store';
+import { getTimeAgo } from './lib/utils';
 import Messages from './messages';
 import ShareModal from './share-modal';
 
+type SendMessageVariables = { clientMessageId: string; text: string };
+type SendMessageContext = {
+  queryKey: ReturnType<typeof QUERY_KEYS.messages.messages>;
+};
+
 const ChatUIScreen = () => {
+  const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
+  const setConvoResponse = useConvoControlStore(
+    state => state.setConvoResponse,
+  );
+  const isConnected = useSocketStore(s => s.isConnected);
+  const convoResponse = useConvoControlStore(state => state.convoResponse);
+  const conversationId = convoResponse?.id ?? '';
+  const online = useIsOnline(conversationId, id);
+  const typing = useIsTyping(conversationId, id);
+  const { onChangeText } = useTypingEmitter(conversationId);
+  useConversationSubscription(conversationId);
+  useMessageSync(conversationId);
+  const queryClient = useQueryClient();
+  const { data: currentUser } = useQuery({ ...getMe() });
   const colorScheme = useColorScheme();
   const { bottom } = useSafeAreaInsets();
   const [message, setMessage] = useState('');
   const [keyboardVisible, setKeyboardVisible] = useState(false);
   const [openShareBox, setOpenShareBox] = useState(false);
+
   const BackgroundImage =
     colorScheme === 'dark'
       ? require('../../assets/images/chat-bg-dark.png')
       : require('../../assets/images/chat-bg.png');
+
+  const { mutate, isPending } = useSendRequest<any, ConversationResponse>({
+    mutationFn: () => MUTATIONS.createConvo({ participantId: id }),
+    errorToast: {
+      title: 'Error',
+      description: "Can't fetch conversation now, please try again!",
+    },
+  });
+
+  const { mutate: mutateSendMessage, isPending: isSendingMessage } =
+    useMutation<unknown, Error, SendMessageVariables, SendMessageContext>({
+      mutationFn: data => MUTATIONS.sendMessage(conversationId, data),
+      onMutate: async variables => {
+        const queryKey = QUERY_KEYS.messages.messages(conversationId);
+        await queryClient.cancelQueries({ queryKey });
+
+        const optimisticMessage: Message = {
+          id: `optimistic:${variables.clientMessageId}`,
+          conversationId,
+          clientMessageId: variables.clientMessageId,
+          senderId: currentUser?.id ?? '',
+          kind: 'text',
+          text: variables.text,
+          links: [],
+          attachments: [],
+          preview: '',
+          createdAt: new Date().toISOString(),
+          replyToMessageId: null,
+          editedAt: null,
+          deletedAt: null,
+          version: 0,
+          reactions: [],
+        };
+
+        queryClient.setQueryData<MessagesResponse>(queryKey, current => ({
+          items: [
+            optimisticMessage,
+            ...(current?.items.filter(
+              message => message.clientMessageId !== variables.clientMessageId,
+            ) ?? []),
+          ],
+          pageInfo: current?.pageInfo ?? {
+            nextCursor: null,
+            hasNextPage: false,
+          },
+        }));
+
+        return { queryKey };
+      },
+      onError: (error, variables, context) => {
+        if (context) {
+          queryClient.setQueryData<MessagesResponse>(
+            context.queryKey,
+            current =>
+              current && {
+                ...current,
+                items: current.items.filter(
+                  message =>
+                    message.clientMessageId !== variables.clientMessageId,
+                ),
+              },
+          );
+          void queryClient.invalidateQueries({
+            queryKey: QUERY_KEYS.messages.byConversation(conversationId),
+          });
+        }
+
+        setMessage(current => current || variables.text);
+        const message = isAxiosError(error)
+          ? (error.response?.data?.message ?? error.message)
+          : error.message;
+        toast.error('Failed to send message', message || 'Please try again.');
+      },
+      onSuccess: () => {
+        void queryClient
+          .invalidateQueries({
+            queryKey: QUERY_KEYS.messages.byConversation(conversationId),
+          })
+          .catch(error => console.warn('sent message refresh failed', error));
+      },
+    });
+
+  const handleSendMessage = () => {
+    if (!conversationId || isSendingMessage || !message.trim()) return;
+
+    const text = message;
+    mutateSendMessage({
+      clientMessageId: Crypto.randomUUID(),
+      text,
+    });
+    setMessage('');
+  };
 
   const [nudge, setNudge] = useState(0);
 
@@ -44,7 +180,18 @@ const ChatUIScreen = () => {
     requestAnimationFrame(() => setNudge(0));
   }, []);
 
-  useEffect(() => forceRelayout(), []);
+  useEffect(() => forceRelayout(), [forceRelayout]);
+
+  useEffect(() => {
+    if (isConnected) {
+      queryClient.invalidateQueries({
+        queryKey: QUERY_KEYS.messages.byConversation(conversationId),
+      });
+      queryClient.invalidateQueries({
+        queryKey: ['receipts', conversationId],
+      });
+    }
+  }, [isConnected, conversationId, queryClient]);
 
   useEffect(() => {
     const showSubscription = Keyboard.addListener(
@@ -71,6 +218,24 @@ const ChatUIScreen = () => {
     };
   }, []);
 
+  useEffect(() => {
+    mutate(
+      {},
+      {
+        onSuccess: data => {
+          setConvoResponse(data);
+        },
+        onError: () => {
+          if (router.canGoBack()) {
+            router.back();
+          } else {
+            router.dismissTo('/(tabs)/chats');
+          }
+        },
+      },
+    );
+  }, [id, mutate, router, setConvoResponse]);
+
   return (
     <View className="flex-1 bg-primary-50 dark:bg-neutral-900">
       <ImageBackground
@@ -91,19 +256,29 @@ const ChatUIScreen = () => {
                 </PressableScale>
                 <View className="flex-row items-center gap-4">
                   <View className="size-12 overflow-hidden rounded-full border-2 border-white">
-                    <Image
-                      source={{
-                        uri: 'https://res.cloudinary.com/dl56ef7sx/image/upload/v1789050188/5461e70468f6aad5bf2b2bd3ade5a1b66e214ffe_awjwhk.png',
-                      }}
-                      className="size-full"
-                    />
+                    {convoResponse?.otherParticipant?.avatarUrl ? (
+                      <Image
+                        source={{
+                          uri: convoResponse?.otherParticipant?.avatarUrl,
+                        }}
+                        className="size-full"
+                      />
+                    ) : (
+                      <View className="size-full bg-gray-500/50" />
+                    )}
                   </View>
                   <View className="gap-[1px]">
                     <TextCustom className="font-sf-pro-bold text-lg/[125%] !text-white">
-                      Keanu Murphy
+                      {convoResponse?.otherParticipant?.displayName}
                     </TextCustom>
                     <TextCustom className="text-sm/[150%] tracking-[0.5px] !text-white/90">
-                      Active 5 minutes ago
+                      {typing
+                        ? 'typing…'
+                        : online
+                          ? 'Online'
+                          : convoResponse?.lastActivityAt
+                            ? `Active ${getTimeAgo(convoResponse.lastActivityAt)} ago`
+                            : ''}
                     </TextCustom>
                   </View>
                 </View>
@@ -125,7 +300,13 @@ const ChatUIScreen = () => {
               className="flex-1"
             >
               <View className="flex-1 justify-between">
-                <Messages isKeyboardVisible={keyboardVisible} />
+                {isPending ? (
+                  <View className="flex-1 items-center justify-center">
+                    <ActivityIndicator />
+                  </View>
+                ) : (
+                  <Messages isKeyboardVisible={keyboardVisible} />
+                )}
                 {openShareBox && (
                   <BlurView
                     intensity={10}
@@ -167,7 +348,10 @@ const ChatUIScreen = () => {
                     <View className="flex-1 flex-row items-center self-center">
                       <TextInput
                         value={message}
-                        onChangeText={setMessage}
+                        onChangeText={t => {
+                          setMessage(t);
+                          onChangeText();
+                        }}
                         selectionColor={
                           Colors[colorScheme ?? 'light'].primary[400]
                         }
@@ -191,6 +375,10 @@ const ChatUIScreen = () => {
                         backgroundColor:
                           Colors[colorScheme ?? 'light'].primary[400],
                       }}
+                      disabled={
+                        isSendingMessage || !conversationId || !message.trim()
+                      }
+                      onPress={handleSendMessage}
                     >
                       <PaperAirplaneIcon />
                     </PressableScale>
