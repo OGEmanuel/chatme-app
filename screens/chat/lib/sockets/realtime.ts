@@ -1,5 +1,6 @@
 // src/socket/realtime.ts
 import { socket } from '.';
+import { queryClient } from '@/lib/query-client';
 import { useSocketStore } from '../store/sockets-control-store';
 import { presenceSubscribe, presenceUnsubscribe } from './commands';
 
@@ -99,6 +100,9 @@ export function registerRealtimeListeners() {
     userId: string;
     status: 'online' | 'offline';
   }) => setFlag('online', p.conversationId, p.userId, p.status === 'online');
+  const onMessageCreated = () => {
+    void queryClient.invalidateQueries({ queryKey: ['convos'] });
+  };
 
   const onTypingStarted = (t: {
     conversationId: string;
@@ -126,6 +130,7 @@ export function registerRealtimeListeners() {
   socket.on('connect', onConnect);
   socket.on('disconnect', onDisconnect);
   socket.on('presence.changed', onPresence);
+  socket.on('message.created', onMessageCreated);
   socket.on('typing.started', onTypingStarted);
   socket.on('typing.stopped', onTypingStopped);
 
@@ -133,6 +138,7 @@ export function registerRealtimeListeners() {
     socket.off('connect', onConnect);
     socket.off('disconnect', onDisconnect);
     socket.off('presence.changed', onPresence);
+    socket.off('message.created', onMessageCreated);
     socket.off('typing.started', onTypingStarted);
     socket.off('typing.stopped', onTypingStopped);
     typingTimers.forEach(clearTimeout);

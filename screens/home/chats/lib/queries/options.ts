@@ -5,7 +5,7 @@ import { QUERY_KEYS } from './key-factory';
 export const getSearchContacts = (searchQuery: string) => {
   return queryOptions({
     queryKey: QUERY_KEYS.contacts.search(searchQuery),
-    queryFn: () => QUERIES.searchContacts(searchQuery),
+    queryFn: ({ signal }) => QUERIES.searchContacts(searchQuery, '20', signal),
     enabled: searchQuery !== '' && searchQuery.trim().length >= 3,
   });
 };
@@ -13,6 +13,7 @@ export const getSearchContacts = (searchQuery: string) => {
 export const getConvos = (limit = '20', archived = false, cursor?: string) => {
   return queryOptions({
     queryKey: QUERY_KEYS.convos.recent(limit, archived, cursor),
-    queryFn: () => QUERIES.getConvos(limit, archived, cursor),
+    queryFn: ({ signal }) =>
+      QUERIES.getConvos(limit, archived, cursor, signal),
   });
 };

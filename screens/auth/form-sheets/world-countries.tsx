@@ -84,7 +84,7 @@ const WorldCountriesScreen = () => {
         )}
         ListEmptyComponent={
           <View>
-            <TextCustom>No results found for "{search}"</TextCustom>
+            <TextCustom>No results found for {search}</TextCustom>
           </View>
         }
         keyExtractor={item => item.flag}

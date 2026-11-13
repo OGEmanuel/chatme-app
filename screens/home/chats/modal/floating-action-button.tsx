@@ -203,6 +203,7 @@ const FloatingActionButton = () => {
           boxShadow: '0px 6px 16px 0px #0C291D1F',
         }}
         onPress={() => handlePress()}
+        accessibilityLabel={isOpen.value ? 'Close chat actions' : 'Open chat actions'}
       >
         <Animated.View style={[plusIcon]}>
           <PlusIcon />
@@ -226,6 +227,8 @@ const FloatingCards = (props: {
   return (
     <PressableScale
       onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={label}
       style={{
         flexDirection: 'row',
         alignItems: 'center',

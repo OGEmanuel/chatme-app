@@ -21,6 +21,68 @@ The socket does not replace the rest of the app's network requests. In this
 app, chat history and sending messages use HTTP; presence, typing, and incoming
 realtime notifications use the socket.
 
+## Recent integration changes
+
+The following changes are implemented in the current working tree. This
+section supplements the realtime walkthrough below with auth ownership,
+conversation routing, messaging recovery, and validation details.
+
+### Account and request ownership
+
+- Each sign-in and logout advances a persisted session generation. Refresh
+  requests, protected retries, late responses, and socket startup are bound to
+  the generation that started them. Older responses cannot overwrite tokens or
+  log out a newer session.
+- Logout clears local auth state and private query/store state immediately,
+  cancels session-owned requests, and then attempts remote logout with the
+  captured refresh token. Private React Query keys include the account and
+  session generation, preventing a prior login's data from being reused after
+  signing in again, including to the same account.
+- HTTP failures log only status, code, and message fields rather than the
+  entire Axios error object.
+
+### Conversation routing and messaging
+
+- New-contact routes resolve conversations from participant IDs. Inbox rows
+  route by conversation ID, supporting existing direct and group conversations.
+  Stale destination responses are ignored; Send stays disabled until the
+  current route resolves. Inaccessible destinations show retry and return
+  actions.
+- Delivery and recovery are implemented in
+  [`use-message-delivery.ts`](./screens/chat/lib/hooks/use-message-delivery.ts),
+  outside the conversation screen. Failed outgoing operations remain visible
+  and can be retried with their original `clientMessageId`; newer drafts remain
+  separate in the composer.
+- Pending operations are stored locally with account and conversation IDs.
+  If a response was lost, retry reuses the same client ID. Deduplicating such a
+  retry into exactly one server message depends on the backend enforcing
+  idempotency for `clientMessageId`.
+- Conversation history and inbox rows load by cursor. Reconnects and incoming
+  `message.created` events refresh the inbox even when no chat is open.
+
+### Contacts, navigation, and validation
+
+- The Contact sheet displays server search results with loading, empty, error,
+  and selection behavior. Selecting a result opens a participant-based route.
+- Authenticated route protection now covers chat, contact, setup, and private
+  form-sheet routes, not only the tabs. Chat controls and Retry actions expose
+  accessibility labels and state.
+- Fixed the reported theme color and archived-row TypeScript errors.
+  `pnpm typecheck` is a repeatable type check. `pnpm lint` covers `app`,
+  `components`, `hooks`, `lib`, and `screens`.
+
+### Remaining work and verification limits
+
+- Media picker selections are not yet completed profile uploads or delivered
+  chat attachments. The repository does not define the upload, verification,
+  avatar-assignment, or attachment API contract, so local URI selection is not
+  treated as upload success.
+- Real-account search and delivery, cross-account image viewing, native builds,
+  physical-device permissions, notification routing, and VoiceOver/TalkBack
+  flows have not been verified.
+- The current lint command passes with existing warnings; `pnpm typecheck`
+  passes. Neither check substitutes for authenticated backend or device tests.
+
 ## One complete trip through the app
 
 ```text
@@ -59,15 +121,16 @@ The auth store is in
 
 - Login puts the access token and refresh token in Zustand state.
 - SecureStore persistence saves the **refresh token**, login state, and
-  onboarding state.
+  onboarding state, user ID, and session generation.
 - The access token is not persisted. On a fresh app start, the socket setup
   therefore uses the in-memory access token if available, or asks the HTTP
   auth client for a fresh one.
 
 The token refresh helper is `getFreshAccessToken()` in
 [`lib/https/index.ts`](./lib/https/index.ts). It sends the stored refresh token
-to `/auth/refresh`, stores the returned tokens, and shares one in-flight refresh
-request if multiple callers need a token at the same time.
+to `/auth/refresh`, stores the returned tokens only if the initiating session
+is still current, and shares one in-flight refresh request per session
+generation.
 
 ## 2. What the socket object is
 
@@ -104,8 +167,9 @@ owns the app-wide connection lifecycle. When started, it:
 
 `open()` checks that the socket URL exists, gets an access token, and calls
 `connectSocket()`. If a token is already in memory it uses that; otherwise it
-refreshes first. It also shares an `opening` promise so overlapping triggers
-don't all start separate token-fetch/connect attempts.
+refreshes first. It captures the current session generation and won't connect
+if that session changes during startup. It also shares an `opening` promise so
+overlapping triggers don't all start separate token-fetch/connect attempts.
 
 There are three particularly important connection events:
 
@@ -136,10 +200,12 @@ established. That distinction is why lifecycle checks use both.
 
 ## 4. What happens when a chat screen opens
 
-[`screens/chat/index.tsx`](./screens/chat/index.tsx) first obtains a
-conversation from the HTTP API. The response includes the conversation ID.
-Until that ID exists, the socket hooks receive an empty string and do not
-subscribe to a conversation.
+[`screens/chat/index.tsx`](./screens/chat/index.tsx) resolves its destination
+from the route. A participant route creates or opens a direct conversation; an
+inbox route loads the existing conversation by its conversation ID, including
+groups. The result is accepted only while that route and session are current.
+Until it resolves, the socket hooks receive an empty string and Send is
+disabled.
 
 With an ID, the screen sets up three hooks:
 
@@ -224,9 +290,13 @@ The screen calls `MUTATIONS.sendMessage()` in
 which makes an HTTP `POST` to
 `/conversations/{conversationId}/messages`.
 
-The screen adds an optimistic message to the React Query cache first, so it
-appears immediately. If the HTTP request fails, it removes that optimistic
-message and shows an error. If it succeeds, it refreshes the message query.
+The delivery hook adds an optimistic message to the React Query cache and
+persists the operation under its account, conversation, and `clientMessageId`.
+If the HTTP request fails, the optimistic row is removed, the failed operation
+remains visible, and Retry reuses the same ID. A later draft stays separate.
+If server history contains that client ID, the local recovery record is
+removed. Exactly-once behavior on a lost response requires server-side
+deduplication by `clientMessageId`.
 
 The socket is still useful for messages: another client can receive a
 `message.created` broadcast. The current screen's
@@ -254,9 +324,12 @@ emit that event for other clients to see message changes promptly.
 The socket is a live delivery channel, not a durable inbox. A device can be
 offline, suspended, or reconnecting while events occur. Therefore:
 
-- On reconnect, the app re-subscribes to every conversation still retained.
+- On reconnect, the app re-subscribes to every conversation still retained and
+  invalidates the inbox conversation queries.
 - It refreshes the current conversation's messages and receipts when
   `isConnected` becomes true.
+- An incoming `message.created` event invalidates the inbox even when no chat
+  screen is open.
 - Messages are fetched from the HTTP API, which can recover changes missed
   while offline.
 - Presence and typing are temporary state; they are cleared on disconnect and

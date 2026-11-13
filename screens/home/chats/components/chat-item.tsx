@@ -23,7 +23,7 @@ export const ChatItem = ({
 }: ChatItemProps) => {
   const [dragged, setDragged] = useState(false);
   const colorScheme = useColorScheme();
-  const isSelected = selected?.includes(item.message?.id!!);
+  const isSelected = selected?.includes(item.id);
   const router = useRouter();
   const inSelectionMode = selected?.length!! > 0;
 
@@ -37,16 +37,16 @@ export const ChatItem = ({
   };
 
   const handleLongPress = () => {
-    toggleSelection(item.message?.id!!);
+    toggleSelection(item.id);
   };
 
   const handlePress = () => {
     if (!inSelectionMode) {
-      router.push(`/chat/${item.otherParticipantId}`);
+      router.push(`/chat/${item.id}?target=conversation`);
       return;
     }
 
-    toggleSelection(item.message?.id!!);
+    toggleSelection(item.id);
   };
   // const handlePress = () => {
   //   if (inSelectionMode) {
@@ -67,6 +67,9 @@ export const ChatItem = ({
       <Pressable
         onLongPress={handleLongPress}
         onPress={handlePress}
+        accessibilityRole="button"
+        accessibilityLabel={`${item.name}${item.unreadCount ? `, ${item.unreadCount} unread messages` : ''}`}
+        accessibilityState={{ selected: isSelected }}
         className={cn(
           'mx-3 flex-row items-center gap-3 rounded-xl p-3',
           dragged || isSelected

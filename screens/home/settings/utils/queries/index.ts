@@ -2,8 +2,8 @@ import { https } from '@/lib/https';
 import { UserProfileResponse } from './types';
 
 export const QUERIES = {
-  getMe: async function () {
-    const response = await https.get<UserProfileResponse>('/me');
+  getMe: async function (signal?: AbortSignal) {
+    const response = await https.get<UserProfileResponse>('/me', { signal });
 
     return response.data;
   },

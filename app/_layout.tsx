@@ -7,7 +7,7 @@ import {
   DefaultTheme,
   ThemeProvider,
 } from '@react-navigation/native';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClientProvider } from '@tanstack/react-query';
 import { useFonts } from 'expo-font';
 import { SplashScreen, Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
@@ -18,6 +18,7 @@ import 'react-native-reanimated';
 import Toast from 'react-native-toast-message';
 import '../global.css';
 import { startSocketLifecycle } from '@/screens/chat/lib/sockets/lifecycle';
+import { queryClient } from '@/lib/query-client';
 
 const NavigationLightTheme = {
   ...DefaultTheme,
@@ -36,8 +37,6 @@ const NavigationDarkTheme = {
     card: Colors.dark.background,
   },
 };
-
-const queryClient = new QueryClient();
 
 export const unstable_settings = {
   anchor: '(tabs)',
@@ -91,7 +90,7 @@ export default function RootLayout() {
               },
             }}
           >
-            <Stack.Protected guard={!hasCompletedOnboarding}>
+            <Stack.Protected guard={loggedIn && !hasCompletedOnboarding}>
               <Stack.Screen
                 name="index"
                 options={{
@@ -114,7 +113,7 @@ export default function RootLayout() {
               />
             </Stack.Protected>
 
-            <Stack.Protected guard={!hasCompletedOnboarding}>
+            <Stack.Protected guard={loggedIn && !hasCompletedOnboarding}>
               <Stack.Screen
                 name="(auth)/name"
                 options={{
@@ -135,8 +134,84 @@ export default function RootLayout() {
                   headerShown: false,
                 }}
               />
+              <Stack.Screen name="chat/[id]" />
+              <Stack.Screen name="new-contact/index" />
+              <Stack.Screen name="new-contact/qr-code" />
+              <Stack.Screen name="setup-pin" />
+              <Stack.Screen
+                name="(form-sheets)/contact"
+                options={{
+                  presentation: 'formSheet',
+                  sheetGrabberVisible:
+                    Platform.OS === 'android' ? false : true,
+                  headerShown: false,
+                  sheetCornerRadius:
+                    Platform.OS === 'android' ? 18 : undefined,
+                  sheetAllowedDetents: [1],
+                  contentStyle: {
+                    backgroundColor:
+                      colorScheme === 'dark'
+                        ? Colors.dark.backgroundSecondary
+                        : Colors.light.backgroundSecondary,
+                  },
+                }}
+              />
+              <Stack.Screen
+                name="(form-sheets)/map"
+                options={{
+                  presentation: 'formSheet',
+                  sheetGrabberVisible:
+                    Platform.OS === 'android' ? false : true,
+                  headerShown: false,
+                  sheetCornerRadius:
+                    Platform.OS === 'android' ? 18 : undefined,
+                  sheetAllowedDetents: [1],
+                  contentStyle: {
+                    backgroundColor:
+                      colorScheme === 'dark'
+                        ? Colors.dark.backgroundSecondary
+                        : Colors.light.backgroundSecondary,
+                    height: '100%',
+                  },
+                }}
+              />
+              <Stack.Screen
+                name="(form-sheets)/edit-profile-picture"
+                options={{
+                  presentation: 'formSheet',
+                  sheetGrabberVisible:
+                    Platform.OS === 'android' ? false : true,
+                  headerShown: false,
+                  sheetCornerRadius:
+                    Platform.OS === 'android' ? 18 : undefined,
+                  sheetAllowedDetents: 'fitToContents',
+                  contentStyle: {
+                    backgroundColor:
+                      colorScheme === 'dark'
+                        ? Colors.dark.backgroundSecondary
+                        : Colors.light.backgroundSecondary,
+                  },
+                }}
+              />
+              <Stack.Screen
+                name="(form-sheets)/create-group"
+                options={{
+                  presentation: 'formSheet',
+                  sheetGrabberVisible:
+                    Platform.OS === 'android' ? false : true,
+                  headerShown: false,
+                  sheetCornerRadius:
+                    Platform.OS === 'android' ? 18 : undefined,
+                  sheetAllowedDetents: 'fitToContents',
+                  contentStyle: {
+                    backgroundColor:
+                      colorScheme === 'dark'
+                        ? Colors.dark.backgroundSecondary
+                        : Colors.light.backgroundSecondary,
+                  },
+                }}
+              />
             </Stack.Protected>
-
             <Stack.Screen
               name="(form-sheets)/world-countries"
               options={{
@@ -152,71 +227,6 @@ export default function RootLayout() {
                 headerTitle: 'Select a country',
                 sheetCornerRadius: Platform.OS === 'android' ? 18 : undefined,
                 sheetAllowedDetents: [0.75],
-                contentStyle: {
-                  backgroundColor:
-                    colorScheme === 'dark'
-                      ? Colors.dark.backgroundSecondary
-                      : Colors.light.backgroundSecondary,
-                },
-              }}
-            />
-            <Stack.Screen
-              name="(form-sheets)/contact"
-              options={{
-                presentation: 'formSheet',
-                sheetGrabberVisible: Platform.OS === 'android' ? false : true,
-                headerShown: false,
-                sheetCornerRadius: Platform.OS === 'android' ? 18 : undefined,
-                sheetAllowedDetents: [1],
-                contentStyle: {
-                  backgroundColor:
-                    colorScheme === 'dark'
-                      ? Colors.dark.backgroundSecondary
-                      : Colors.light.backgroundSecondary,
-                },
-              }}
-            />
-            <Stack.Screen
-              name="(form-sheets)/map"
-              options={{
-                presentation: 'formSheet',
-                sheetGrabberVisible: Platform.OS === 'android' ? false : true,
-                headerShown: false,
-                sheetCornerRadius: Platform.OS === 'android' ? 18 : undefined,
-                sheetAllowedDetents: [1],
-                contentStyle: {
-                  backgroundColor:
-                    colorScheme === 'dark'
-                      ? Colors.dark.backgroundSecondary
-                      : Colors.light.backgroundSecondary,
-                  height: '100%',
-                },
-              }}
-            />
-            <Stack.Screen
-              name="(form-sheets)/edit-profile-picture"
-              options={{
-                presentation: 'formSheet',
-                sheetGrabberVisible: Platform.OS === 'android' ? false : true,
-                headerShown: false,
-                sheetCornerRadius: Platform.OS === 'android' ? 18 : undefined,
-                sheetAllowedDetents: 'fitToContents',
-                contentStyle: {
-                  backgroundColor:
-                    colorScheme === 'dark'
-                      ? Colors.dark.backgroundSecondary
-                      : Colors.light.backgroundSecondary,
-                },
-              }}
-            />
-            <Stack.Screen
-              name="(form-sheets)/create-group"
-              options={{
-                presentation: 'formSheet',
-                sheetGrabberVisible: Platform.OS === 'android' ? false : true,
-                headerShown: false,
-                sheetCornerRadius: Platform.OS === 'android' ? 18 : undefined,
-                sheetAllowedDetents: 'fitToContents',
                 contentStyle: {
                   backgroundColor:
                     colorScheme === 'dark'

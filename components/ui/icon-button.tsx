@@ -6,8 +6,10 @@ const IconButton = (props: {
   onPress: () => void;
   children: React.ReactNode;
   style?: ViewStyle;
+  accessibilityLabel?: string;
+  disabled?: boolean;
 }) => {
-  const { onPress, children, style } = props;
+  const { onPress, children, style, accessibilityLabel, disabled } = props;
 
   return (
     <PressableScale
@@ -25,6 +27,10 @@ const IconButton = (props: {
         style,
       ]}
       onPress={onPress}
+      disabled={disabled}
+      accessibilityRole="button"
+      accessibilityLabel={accessibilityLabel}
+      accessibilityState={{ disabled }}
     >
       {children}
     </PressableScale>

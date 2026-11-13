@@ -3,6 +3,8 @@ type Message = {
   text: string;
   time: string;
   you: boolean;
+  status?: 'sending' | 'failed';
+  clientMessageId?: string;
 };
 
 export type ChatListItem =
