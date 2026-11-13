@@ -1,4 +1,5 @@
 import { useAuthStore } from '@/screens/auth/store/auth-store';
+import { getSessionSignal } from '@/lib/session/session-requests';
 import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
 import { AuthResponse } from './type';
 
@@ -20,16 +21,33 @@ const AUTH_PATHS = [
   '/auth/otp/resend',
   '/auth/otp/verify',
   '/auth/refresh',
+  '/auth/logout',
 ];
 const isAuthPath = (url?: string) => AUTH_PATHS.some(p => url?.includes(p));
 
-const refreshAccessToken = async (): Promise<string> => {
+type SessionRequestConfig = InternalAxiosRequestConfig & {
+  _retry?: boolean;
+  _sessionGeneration?: number;
+};
+
+const isCurrentSession = (generation: number) =>
+  useAuthStore.getState().sessionGeneration === generation;
+
+const refreshAccessToken = async (generation: number): Promise<string> => {
+  if (!isCurrentSession(generation)) {
+    throw new Error('Session changed before token refresh');
+  }
   const { refreshToken } = useAuthStore.getState();
   if (!refreshToken) throw new Error('No refresh token');
 
-  const { data } = await refreshClient.post<AuthResponse>('/auth/refresh', {
-    refreshToken: refreshToken,
-  });
+  const { data } = await refreshClient.post<AuthResponse>(
+    '/auth/refresh',
+    { refreshToken },
+    { signal: getSessionSignal(generation) },
+  );
+  if (!isCurrentSession(generation)) {
+    throw new Error('Session changed during token refresh');
+  }
   useAuthStore.getState().setTokens({
     accessToken: data.accessToken,
     refreshToken: data.refreshToken,
@@ -38,13 +56,17 @@ const refreshAccessToken = async (): Promise<string> => {
   return data.accessToken;
 };
 
-let refreshPromise: Promise<string> | null = null;
+const refreshPromises = new Map<number, Promise<string>>();
 
-export const getFreshAccessToken = () => {
+export const getFreshAccessToken = (
+  generation = useAuthStore.getState().sessionGeneration,
+) => {
+  let refreshPromise = refreshPromises.get(generation);
   if (!refreshPromise) {
-    refreshPromise = refreshAccessToken().finally(() => {
-      refreshPromise = null;
+    refreshPromise = refreshAccessToken(generation).finally(() => {
+      refreshPromises.delete(generation);
     });
+    refreshPromises.set(generation, refreshPromise);
   }
   return refreshPromise;
 };
@@ -56,7 +78,15 @@ const isAuthRejection = (e: unknown) => {
 };
 
 axiosInstance.interceptors.request.use(config => {
-  const { accessToken } = useAuthStore.getState();
+  const { accessToken, sessionGeneration } = useAuthStore.getState();
+  const requestConfig = config as SessionRequestConfig;
+  const requestGeneration =
+    requestConfig._sessionGeneration ?? sessionGeneration;
+  if (requestGeneration !== sessionGeneration) {
+    return Promise.reject(new Error('Session changed before request dispatch'));
+  }
+  requestConfig._sessionGeneration = requestGeneration;
+  requestConfig.signal ??= getSessionSignal(requestGeneration);
   if (accessToken) {
     config.headers.Authorization = `Bearer ${accessToken}`;
   }
@@ -64,23 +94,42 @@ axiosInstance.interceptors.request.use(config => {
 });
 
 axiosInstance.interceptors.response.use(
-  response => response,
+  response => {
+    const config = response.config as SessionRequestConfig;
+    if (
+      config._sessionGeneration !== undefined &&
+      !isCurrentSession(config._sessionGeneration)
+    ) {
+      return Promise.reject(new Error('Session changed before response'));
+    }
+    return response;
+  },
   async (error: AxiosError) => {
-    const originalRequest = error.config as
-      (InternalAxiosRequestConfig & { _retry?: boolean }) | undefined;
+    const originalRequest = error.config as SessionRequestConfig | undefined;
 
     const status = error.response?.status;
 
     if (status !== 401 || !originalRequest || isAuthPath(originalRequest.url)) {
       // Only report what's actionable.
       if (!status || status >= 500) {
-        console.log(error);
+        console.warn('HTTP request failed', {
+          status,
+          code: error.code,
+          message: error.message,
+        });
       }
       return Promise.reject(error);
     }
 
+    const generation =
+      originalRequest._sessionGeneration ??
+      useAuthStore.getState().sessionGeneration;
+    if (!isCurrentSession(generation)) {
+      return Promise.reject(new Error('Session changed before request retry'));
+    }
+
     if (originalRequest._retry) {
-      useAuthStore.getState().logOut();
+      useAuthStore.getState().logOut(generation);
       return Promise.reject(error);
     }
     originalRequest._retry = true;
@@ -93,7 +142,10 @@ axiosInstance.interceptors.response.use(
       const token =
         current && usedHeader !== `Bearer ${current}`
           ? current
-          : await getFreshAccessToken();
+          : await getFreshAccessToken(generation);
+      if (!isCurrentSession(generation)) {
+        return Promise.reject(new Error('Session changed before request retry'));
+      }
 
       originalRequest.headers.Authorization = `Bearer ${token}`;
       return axiosInstance(originalRequest);
@@ -102,7 +154,7 @@ axiosInstance.interceptors.response.use(
         isAuthRejection(refreshError) ||
         (refreshError as Error).message === 'No refresh token'
       ) {
-        useAuthStore.getState().logOut();
+        useAuthStore.getState().logOut(generation);
       }
       return Promise.reject(refreshError);
     }

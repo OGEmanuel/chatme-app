@@ -7,6 +7,7 @@ import { MUTATIONS } from './utils/queries';
 
 const SettingsScreen = () => {
   const refreshToken = useAuthStore(state => state.refreshToken);
+  const sessionGeneration = useAuthStore(state => state.sessionGeneration);
   const logOut = useAuthStore(state => state.logOut);
 
   const { mutate, isPending } = useSendRequest<
@@ -33,18 +34,11 @@ const SettingsScreen = () => {
           label="Logout"
           variant="secondary"
           isPending={isPending}
-          onPress={() =>
-            mutate(
-              {
-                refreshToken: refreshToken!!,
-              },
-              {
-                onSuccess: () => {
-                  logOut();
-                },
-              },
-            )
-          }
+          onPress={() => {
+            const token = refreshToken;
+            logOut(sessionGeneration);
+            if (token) mutate({ refreshToken: token });
+          }}
         />
       </View>
     </SafeAreaView>

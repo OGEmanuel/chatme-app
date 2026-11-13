@@ -2,7 +2,11 @@ import { https } from '@/lib/https';
 import { ConversationListResponse, SearchContactsResponse } from './type';
 
 export const QUERIES = {
-  searchContacts: async (searchQuery: string, limit = '20') => {
+  searchContacts: async (
+    searchQuery: string,
+    limit = '20',
+    signal?: AbortSignal,
+  ) => {
     const params = new URLSearchParams();
 
     params.append('q', searchQuery);
@@ -10,10 +14,15 @@ export const QUERIES = {
 
     const url = `/users/search?${params.toString()}`;
 
-    const response = await https.get<SearchContactsResponse>(url);
+    const response = await https.get<SearchContactsResponse>(url, { signal });
     return response.data;
   },
-  getConvos: async (limit = '20', archived = false, cursor?: string) => {
+  getConvos: async (
+    limit = '20',
+    archived = false,
+    cursor?: string,
+    signal?: AbortSignal,
+  ) => {
     const params = new URLSearchParams();
 
     params.append('limit', limit);
@@ -24,7 +33,7 @@ export const QUERIES = {
 
     const url = `/conversations?${params.toString()}`;
 
-    const response = await https.get<ConversationListResponse>(url);
+    const response = await https.get<ConversationListResponse>(url, { signal });
 
     return response.data;
   },

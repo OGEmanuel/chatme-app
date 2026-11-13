@@ -1,13 +1,11 @@
 import TextCustom from '@/components/ui/text';
 import { useAppForm } from '@/hooks/form';
 import useSendRequest from '@/lib/hooks/useSendRequests';
-import { toast } from '@/lib/toast';
 import { getValidCountdown } from '@/lib/utils';
 import { revalidateLogic } from '@tanstack/react-form';
-import * as Clipboard from 'expo-clipboard';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import { Alert, Platform, Pressable, View } from 'react-native';
+import { Platform, Pressable, View } from 'react-native';
 import z from 'zod';
 import AuthLayoutWrapper, {
   AuthLayoutHeader,
@@ -30,9 +28,6 @@ const VerifyScreen = () => {
   }>();
   const [timer, setTimer] = useState(() => getValidCountdown(resendInSeconds));
   const router = useRouter();
-  const copyToClipboard = async (text: string) => {
-    await Clipboard.setStringAsync(text);
-  };
   const logIn = useAuthStore(state => state.logIn);
 
   const { mutate, isPending } = useSendRequest<
@@ -41,7 +36,11 @@ const VerifyScreen = () => {
       code: string;
       device: { name: string; platform: string };
     },
-    { accessToken: string; refreshToken: string }
+    {
+      accessToken: string;
+      refreshToken: string;
+      user: { id: string };
+    }
   >({
     mutationFn: (data: {
       challengeId: string;
@@ -102,6 +101,7 @@ const VerifyScreen = () => {
             logIn({
               accessToken: data.accessToken,
               refreshToken: data.refreshToken,
+              userId: data.user.id,
             });
             router.push('/(auth)/name');
           },
@@ -132,21 +132,7 @@ const VerifyScreen = () => {
       },
       {
         onSuccess: (data: { resendInSeconds: number }) => {
-          Alert.alert(
-            'OTP Sent!',
-            `Please copy this code 1234 for user verification`,
-            [
-              {
-                text: 'Copy',
-                style: 'default',
-                onPress: () => {
-                  (copyToClipboard(`1234`),
-                    toast.success('Code copied!', 'Please check your phone'),
-                    setTimer(data.resendInSeconds));
-                },
-              },
-            ],
-          );
+          setTimer(data.resendInSeconds);
         },
       },
     );
@@ -172,7 +158,7 @@ const VerifyScreen = () => {
           </form.AppField>
           <View className="items-center gap-2">
             <TextCustom className="text-sm/[150%] tracking-wider !text-neutral-200">
-              If you don't get the code, resend it in{' '}
+              If you do not get the code, resend it in{' '}
               <TextCustom className="font-sf-pro-medium text-sm/[150%] !text-black dark:!text-white">
                 {timer}
               </TextCustom>{' '}

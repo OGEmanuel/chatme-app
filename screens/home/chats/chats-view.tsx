@@ -10,7 +10,7 @@ import { useAppForm } from '@/hooks/form';
 import { useDebounce } from '@/lib/hooks/use-debounce';
 import { getTimeAgo } from '@/screens/chat/lib/utils';
 import { LegendList } from '@legendapp/list/react-native';
-import { useQuery } from '@tanstack/react-query';
+import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
 import {
@@ -24,7 +24,9 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Header from '../../components/header';
 import { getMe } from '../settings/utils/queries/options';
 import { ArchivedItem, ChatItem } from './components/chat-item';
-import { getConvos, getSearchContacts } from './lib/queries/options';
+import { QUERIES } from './lib/queries';
+import { QUERY_KEYS } from './lib/queries/key-factory';
+import { getSearchContacts } from './lib/queries/options';
 
 // const CHATS = [
 //   {
@@ -110,32 +112,50 @@ const ChatsView = () => {
   const [selected, setSelected] = useState<string[]>([]);
   const router = useRouter();
   const { data } = useQuery({ ...getSearchContacts(debouncedSearchText) });
-  const { data: convosData, isPending: convosIsPending } = useQuery({
-    ...getConvos(),
+  const {
+    data: convosData,
+    isPending: convosIsPending,
+    isError: convosIsError,
+    refetch: refetchConvos,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useInfiniteQuery({
+    queryKey: QUERY_KEYS.convos.recent(),
+    queryFn: ({ pageParam, signal }) =>
+      QUERIES.getConvos('20', false, pageParam, signal),
+    initialPageParam: undefined as string | undefined,
+    getNextPageParam: page =>
+      page.pageInfo.hasNextPage ? page.pageInfo.nextCursor ?? undefined : undefined,
   });
   const { data: currentUser } = useQuery({ ...getMe() });
 
-  const CHATS = convosData?.items.map(convo => ({
-    id: convo.id,
-    otherParticipantId:
-      convo.type === 'direct' ? convo.otherParticipant.id : convo.id,
-    name:
-      convo.type === 'direct' ? convo.otherParticipant.displayName : convo.name,
-    time: convo.updatedAt,
-    message: convo.latestMessage,
-    unreadCount: convo.unreadCount,
-    you: convo.latestMessage?.senderId === currentUser?.id,
-    settings: convo.settings,
-    type: convo.type,
-    online:
-      getTimeAgo(convo.lastActivityAt).toLowerCase() === 'just now'
-        ? true
-        : false,
-    avatar:
-      convo.type === 'direct'
-        ? convo.otherParticipant.avatarUrl
-        : convo.avatarUrl,
-  }));
+  const CHATS = useMemo(
+    () =>
+      convosData?.pages.flatMap(page =>
+        page.items.map(convo => ({
+          id: convo.id,
+          otherParticipantId:
+            convo.type === 'direct' ? convo.otherParticipant.id : convo.id,
+          name:
+            convo.type === 'direct'
+              ? convo.otherParticipant.displayName
+              : convo.name,
+          time: convo.updatedAt,
+          message: convo.latestMessage,
+          unreadCount: convo.unreadCount,
+          you: convo.latestMessage?.senderId === currentUser?.id,
+          settings: convo.settings,
+          type: convo.type,
+          online: getTimeAgo(convo.lastActivityAt).toLowerCase() === 'just now',
+          avatar:
+            convo.type === 'direct'
+              ? convo.otherParticipant.avatarUrl
+              : convo.avatarUrl,
+        })),
+      ),
+    [convosData, currentUser?.id],
+  );
 
   const form = useAppForm({
     defaultValues: {
@@ -149,7 +169,7 @@ const ChatsView = () => {
         ...chat,
         isSelected: selected.includes(chat.id),
       })),
-    [selected],
+    [CHATS, selected],
   );
 
   return (
@@ -243,6 +263,8 @@ const ChatsView = () => {
               renderItem={({ item }) => (
                 <Pressable
                   onPress={() => router.push(`/chat/${item.id}`)}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Start a conversation with ${item.displayName}`}
                   className="flex-row items-center gap-4 active:opacity-75"
                 >
                   <View className="size-14 overflow-hidden rounded-full">
@@ -260,9 +282,18 @@ const ChatsView = () => {
           <View className="flex-1 items-center justify-center">
             <ActivityIndicator />
           </View>
+        ) : convosIsError ? (
+          <Pressable
+            onPress={() => void refetchConvos()}
+            accessibilityRole="button"
+            accessibilityLabel="Retry loading chats"
+            className="flex-1 items-center justify-center"
+          >
+            <TextCustom>Unable to load chats. Tap to retry.</TextCustom>
+          </Pressable>
         ) : (
           <LegendList
-            data={chatData}
+            data={chatData ?? []}
             showsVerticalScrollIndicator={false}
             keyExtractor={item => item.id.toString()}
             className="gap-1"
@@ -271,6 +302,12 @@ const ChatsView = () => {
               gap: 4,
             }}
             recycleItems={true}
+            onEndReached={() => {
+              if (hasNextPage && !isFetchingNextPage) {
+                void fetchNextPage();
+              }
+            }}
+            onEndReachedThreshold={0.4}
             renderItem={({ item }) => {
               if (item.settings.archived) {
                 return <ArchivedItem />;
@@ -284,6 +321,9 @@ const ChatsView = () => {
                 />
               );
             }}
+            ListFooterComponent={
+              isFetchingNextPage ? <ActivityIndicator /> : null
+            }
           />
         )}
       </View>

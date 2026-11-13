@@ -3,6 +3,7 @@ import NetInfo from '@react-native-community/netinfo';
 import { isAxiosError } from 'axios';
 import { AppState } from 'react-native';
 import { getFreshAccessToken } from '@/lib/https';
+import { queryClient } from '@/lib/query-client';
 import { useAuthStore } from '@/screens/auth/store/auth-store';
 import { connectSocket, disconnectSocket, socket } from '.';
 import { useSocketStore } from '../store/sockets-control-store';
@@ -11,6 +12,7 @@ import { registerRealtimeListeners } from './realtime';
 const MAX_AUTH_RETRIES = 3;
 
 export function startSocketLifecycle() {
+  const sessionGeneration = useAuthStore.getState().sessionGeneration;
   let authRetries = 0;
   let closed = false;
   let opening: Promise<void> | null = null;
@@ -19,7 +21,13 @@ export function startSocketLifecycle() {
   const stopRealtime = registerRealtimeListeners();
 
   const open = (refreshToken = false): Promise<void> => {
-    if (closed || (!refreshToken && socket.active)) return Promise.resolve();
+    if (
+      closed ||
+      useAuthStore.getState().sessionGeneration !== sessionGeneration ||
+      (!refreshToken && socket.active)
+    ) {
+      return Promise.resolve();
+    }
     if (opening) return opening;
 
     opening = (async () => {
@@ -34,10 +42,15 @@ export function startSocketLifecycle() {
         if (refreshToken) disconnectSocket();
         const token =
           refreshToken
-            ? await getFreshAccessToken()
+            ? await getFreshAccessToken(sessionGeneration)
             : (useAuthStore.getState().accessToken ??
               (await getFreshAccessToken()));
-        if (!closed) connectSocket(token);
+        if (
+          !closed &&
+          useAuthStore.getState().sessionGeneration === sessionGeneration
+        ) {
+          connectSocket(token);
+        }
       } catch (error) {
         console.warn('socket authentication failed', error);
         const status = isAxiosError(error) ? error.response?.status : null;
@@ -47,7 +60,7 @@ export function startSocketLifecycle() {
           status === 403 ||
           (error instanceof Error && error.message === 'No refresh token')
         ) {
-          useAuthStore.getState().logOut();
+          useAuthStore.getState().logOut(sessionGeneration);
         }
       }
     })().finally(() => {
@@ -60,6 +73,7 @@ export function startSocketLifecycle() {
   const onConnect = () => {
     authRetries = 0;
     useSocketStore.setState({ isConnected: true });
+    void queryClient.invalidateQueries({ queryKey: ['convos'] });
     console.info('socket connected');
   };
 

@@ -1,3 +1,4 @@
+import { clearPrivateSessionState } from '@/lib/session/clear-private-state';
 import * as SecureStore from 'expo-secure-store';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
@@ -5,26 +6,32 @@ import { createJSONStorage, persist } from 'zustand/middleware';
 type AuthState = {
   accessToken: string | null;
   refreshToken: string | null;
+  userId: string | null;
+  sessionGeneration: number;
 
   isLoggedIn: boolean;
   hasCompletedOnboarding: boolean;
 
   setTokens: (tokens: { accessToken: string; refreshToken?: string }) => void;
 
-  logIn: (tokens: { accessToken: string; refreshToken: string }) => void;
+  logIn: (tokens: {
+    accessToken: string;
+    refreshToken: string;
+    userId: string;
+  }) => void;
 
-  logOut: () => void;
+  logOut: (expectedGeneration?: number) => void;
   completeOnboarding: () => void;
   resetOnboarding: () => void;
 };
 
 export const useAuthStore = create<AuthState>()(
   persist(
-    set => ({
+    (set, get) => ({
       accessToken: null,
       refreshToken: null,
-
-      user: null,
+      userId: null,
+      sessionGeneration: 0,
 
       isLoggedIn: false,
       hasCompletedOnboarding: false,
@@ -37,21 +44,37 @@ export const useAuthStore = create<AuthState>()(
         }));
       },
 
-      logIn: ({ accessToken, refreshToken }) => {
-        set({
+      logIn: ({ accessToken, refreshToken, userId }) => {
+        const previousSession = get();
+        set(state => ({
           accessToken,
           refreshToken,
+          userId,
+          sessionGeneration: state.sessionGeneration + 1,
           isLoggedIn: true,
-        });
+        }));
+        if (previousSession.isLoggedIn) {
+          clearPrivateSessionState(previousSession.sessionGeneration);
+        }
       },
 
-      logOut: () => {
-        set({
+      logOut: expectedGeneration => {
+        if (
+          expectedGeneration !== undefined &&
+          get().sessionGeneration !== expectedGeneration
+        ) {
+          return;
+        }
+        const previousGeneration = get().sessionGeneration;
+        set(state => ({
           accessToken: null,
           refreshToken: null,
+          userId: null,
+          sessionGeneration: state.sessionGeneration + 1,
           isLoggedIn: false,
           hasCompletedOnboarding: false,
-        });
+        }));
+        clearPrivateSessionState(previousGeneration);
       },
 
       completeOnboarding: () => {
@@ -79,6 +102,8 @@ export const useAuthStore = create<AuthState>()(
 
       partialize: state => ({
         refreshToken: state.refreshToken,
+        userId: state.userId,
+        sessionGeneration: state.sessionGeneration,
         isLoggedIn: state.isLoggedIn,
         hasCompletedOnboarding: state.hasCompletedOnboarding,
       }),

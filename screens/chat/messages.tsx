@@ -1,12 +1,20 @@
 import TextCustom from '@/components/ui/text';
 import { cn } from '@/lib/utils';
 import { LegendList, LegendListRef } from '@legendapp/list/react-native';
-import { useQuery } from '@tanstack/react-query';
+import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import { useEffect, useMemo, useRef } from 'react';
-import { NativeScrollEvent, NativeSyntheticEvent, View } from 'react-native';
+import {
+  ActivityIndicator,
+  NativeScrollEvent,
+  NativeSyntheticEvent,
+  Pressable,
+  View,
+} from 'react-native';
 import { getMe } from '../home/settings/utils/queries/options';
-import { getMessages } from './lib/queries/options';
-import { useConvoControlStore } from './lib/store/convo-control-store';
+import { QUERIES } from './lib/queries';
+import { QUERY_KEYS } from './lib/queries/key-factory';
+import type { PendingSend } from './lib/store/pending-send-store';
+import { usePendingSendStore } from './lib/store/pending-send-store';
 import { ChatListItem } from './lib/types';
 import { format24HrTime, getDateLabel } from './lib/utils';
 
@@ -15,61 +23,36 @@ type Message = {
   text: string;
   time: string;
   you: boolean;
+  status?: 'sending' | 'failed';
+  clientMessageId?: string;
 };
 
-const DUMMY_MESSAGES = [
-  {
-    id: 1,
-    text: 'Habitant elit pellentesque curabitur morbi sit fusce elit',
-    time: '18:25',
-  },
-  { id: 2, text: 'Gravida lectus semper orci', time: '19:40', you: true },
-  {
-    id: 3,
-    text: 'Egestas interdum orci commodo faucibus pretium, neque etiam',
-    time: '19:40',
-  },
-  {
-    id: 4,
-    text: 'Orci maecenas hendrerit mattis consectetur. Mauris.',
-    time: '19:40',
-    you: false,
-  },
-  {
-    id: 5,
-    text: 'Egestas interdum orci commodo faucibus pretium, neque etiam',
-    time: '16:40',
-    you: true,
-  },
-  {
-    id: 6,
-    text: 'As the morning mist began to pull away from the edges of the quiet, sleeping forest,a lone red fox slipped silently through the damp ferns without leaving a single track;high above in the canopy, a blue jay called out to announce the arrival of the new day,while the ancient river below continued its endless, patient carve through the canyon floor,whispering secrets to the smooth gray stones that had rested there for a thousand years;and though the rest of the world remained completely unaware of this quiet masterpiece,nature went right on painting its quiet magic without ever needing an audience.',
-    time: '17:40',
-    you: false,
-  },
-  {
-    id: 7,
-    text: 'As the morning mist began to pull away from the edges of the quiet, sleeping forest,a lone red fox slipped silently through the damp ferns without leaving a single track;high above in the canopy, a blue jay called out to announce the arrival of the new day,while the ancient river below continued its endless, patient carve through the canyon floor,whispering secrets to the smooth gray stones that had rested there for a thousand years;and though the rest of the world remained completely unaware of this quiet masterpiece,nature went right on painting its quiet magic without ever needing an audience.',
-    time: '17:40',
-    you: true,
-  },
-  { id: 8, text: 'Gravida lectus semper orci', time: '20:00', you: false },
-  {
-    id: 9,
-    text: 'Egestas interdum orci commodo faucibus pretium, neque etiam',
-    time: '04:55',
-    you: true,
-  },
-  { id: 10, text: 'Ok', time: '16:20', you: false },
-];
-
-const Messages = (props: { isKeyboardVisible: boolean }) => {
-  const { isKeyboardVisible } = props;
-  const convoResponse = useConvoControlStore(state => state.convoResponse);
+const Messages = (props: {
+  conversationId: string;
+  isKeyboardVisible: boolean;
+  pendingMessages: PendingSend[];
+  onRetry: (operation: PendingSend) => void;
+}) => {
+  const { conversationId, isKeyboardVisible, pendingMessages, onRetry } = props;
   const { data: userData } = useQuery({ ...getMe() });
-  const { data } = useQuery({
-    ...getMessages(convoResponse?.id!!),
+  const {
+    data,
+    isPending,
+    isError,
+    refetch,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useInfiniteQuery({
+    queryKey: QUERY_KEYS.messages.messages(conversationId),
+    queryFn: ({ pageParam, signal }) =>
+      QUERIES.getMessages(conversationId, '50', pageParam, signal),
+    initialPageParam: undefined as string | undefined,
+    getNextPageParam: page =>
+      page.pageInfo.hasNextPage ? page.pageInfo.nextCursor ?? undefined : undefined,
+    enabled: !!conversationId,
   });
+  const removePendingSend = usePendingSendStore(state => state.remove);
   const legendListRef = useRef<LegendListRef>(null);
   const isAtBottom = useRef(true);
   const handleScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
@@ -79,17 +62,57 @@ const Messages = (props: { isKeyboardVisible: boolean }) => {
       contentSize.height - (contentOffset.y + layoutMeasurement.height);
 
     isAtBottom.current = distanceFromBottom < 50;
+    if (
+      contentOffset.y < 60 &&
+      hasNextPage &&
+      !isFetchingNextPage
+    ) {
+      void fetchNextPage();
+    }
   };
 
-  const messages = data?.items
-    .slice()
-    .reverse()
-    .map(message => ({
-      id: message.id,
-      text: message.text,
-      time: message.createdAt,
-      you: message.senderId === userData?.id,
-    }));
+  const serverMessages = useMemo(
+    () => data?.pages.flatMap(page => page.items) ?? [],
+    [data],
+  );
+  const serverClientIds = useMemo(
+    () => new Set(serverMessages.map(message => message.clientMessageId)),
+    [serverMessages],
+  );
+  const messages = useMemo(
+    () =>
+      [
+        ...serverMessages.map(message => ({
+          id: message.id,
+          text: message.text,
+          time: message.createdAt,
+          you: message.senderId === userData?.id,
+          clientMessageId: message.clientMessageId,
+        })),
+        ...pendingMessages
+          .filter(operation => !serverClientIds.has(operation.clientMessageId))
+          .map(operation => ({
+            id: `pending:${operation.clientMessageId}`,
+            clientMessageId: operation.clientMessageId,
+            text: operation.text,
+            time: operation.createdAt,
+            you: true,
+            status:
+              operation.status === 'failed'
+                ? ('failed' as const)
+                : ('sending' as const),
+          })),
+      ].sort((a, b) => Date.parse(a.time) - Date.parse(b.time)),
+    [pendingMessages, serverClientIds, serverMessages, userData?.id],
+  );
+
+  useEffect(() => {
+    for (const operation of pendingMessages) {
+      if (serverClientIds.has(operation.clientMessageId)) {
+        removePendingSend(operation.accountId, operation.clientMessageId);
+      }
+    }
+  }, [pendingMessages, removePendingSend, serverClientIds]);
 
   const groupedMessages = useMemo(() => {
     const result: ChatListItem[] = [];
@@ -166,17 +189,63 @@ const Messages = (props: { isKeyboardVisible: boolean }) => {
             {item.text}
           </TextCustom>
         </View>
-        <TextCustom
-          className={'font-sf-pro-medium text-sm/[150%] !text-neutral-300'}
-        >
-          {format24HrTime(item.time)}
-        </TextCustom>
+        <View className="items-end gap-1">
+          <TextCustom
+            className={'font-sf-pro-medium text-sm/[150%] !text-neutral-300'}
+          >
+            {item.status ? (item.status === 'failed' ? 'Not sent' : 'Sending…') : format24HrTime(item.time)}
+          </TextCustom>
+          {item.status === 'failed' && item.clientMessageId && (
+            <Pressable
+              onPress={() => {
+                const operation = pendingMessages.find(
+                  pending =>
+                    pending.clientMessageId === item.clientMessageId,
+                );
+                if (operation) onRetry(operation);
+              }}
+              accessibilityRole="button"
+              accessibilityLabel={`Retry sending message: ${item.text}`}
+              accessibilityHint="Sends this message again using the same message identifier."
+            >
+              <TextCustom className="font-sf-pro-bold text-sm text-primary-400">
+                Retry
+              </TextCustom>
+            </Pressable>
+          )}
+        </View>
       </View>
     );
   };
 
+  if (isPending) {
+    return (
+      <View className="flex-1 items-center justify-center">
+        <ActivityIndicator />
+      </View>
+    );
+  }
+
+  if (isError) {
+    return (
+      <Pressable
+        onPress={() => void refetch()}
+        accessibilityRole="button"
+        accessibilityLabel="Retry loading conversation history"
+        className="flex-1 items-center justify-center px-8"
+      >
+        <TextCustom className="text-center">
+          Unable to load messages. Tap to retry.
+        </TextCustom>
+      </Pressable>
+    );
+  }
+
   return (
     <View className="flex-1">
+      {isFetchingNextPage && (
+        <ActivityIndicator className="absolute left-0 right-0 top-2 z-10" />
+      )}
       <LegendList
         data={groupedMessages}
         showsVerticalScrollIndicator={false}

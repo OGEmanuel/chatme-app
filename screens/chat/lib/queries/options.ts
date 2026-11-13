@@ -9,7 +9,8 @@ export const getMessages = (
 ) => {
   return queryOptions({
     queryKey: QUERY_KEYS.messages.messages(convoId, limit, cursor),
-    queryFn: () => QUERIES.getMessages(convoId, limit, cursor),
+    queryFn: ({ signal }) =>
+      QUERIES.getMessages(convoId, limit, cursor, signal),
     enabled: !!convoId,
   });
 };

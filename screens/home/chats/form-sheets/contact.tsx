@@ -6,50 +6,31 @@ import { Colors } from '@/constants/theme';
 import { useAppForm } from '@/hooks/form';
 import { useDebounce } from '@/lib/hooks/use-debounce';
 import { cn } from '@/lib/utils';
-import { faker } from '@faker-js/faker';
 import { useField } from '@tanstack/react-form';
 import { useQuery } from '@tanstack/react-query';
-import { Link } from 'expo-router';
+import { useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { Image, Pressable, useColorScheme, View } from 'react-native';
+import {
+  ActivityIndicator,
+  Image,
+  Pressable,
+  SectionList,
+  useColorScheme,
+  View,
+} from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { getSearchContacts } from '../lib/queries/options';
 import { SearchContacts } from '../lib/queries/type';
-
-type Contact = {
-  id: number;
-  name: string;
-  avatar: string;
-  phone: string;
-};
 
 const ContactScreen = () => {
   const [searchText, setSearchText] = useState('');
   const debouncedSearchText = useDebounce(searchText, 500);
   const colorScheme = useColorScheme();
   const insets = useSafeAreaInsets();
-  const [contacts] = useState(() =>
-    Array.from({ length: 20 }, (_, i) => ({
-      id: i,
-      name: faker.person.fullName(),
-      avatar: faker.image.avatar(),
-      phone: faker.phone.number({ style: 'international' }),
-    })),
-  );
-  const [renderedContacts, setRenderedContacts] = useState<
-    {
-      title: string;
-      data: Contact[];
-    }[]
-  >([]);
-
-  const { data } = useQuery({ ...getSearchContacts(debouncedSearchText) });
-  // const getToken = useAuthStore({})
-
-  // console.log(debouncedSearchText);
-
-  // console.log(JSON.stringify(data, null, 2));
-  // console.log(data);
+  const router = useRouter();
+  const { data, isFetching, isError, refetch } = useQuery({
+    ...getSearchContacts(debouncedSearchText),
+  });
 
   const form = useAppForm({
     defaultValues: {
@@ -66,7 +47,7 @@ const ContactScreen = () => {
   });
 
   const sections = useMemo(() => {
-    if (!data) return;
+    if (!data) return [];
     const sorted = [...data?.items].sort((a, b) =>
       a.displayName.localeCompare(b.displayName),
     );
@@ -89,108 +70,8 @@ const ContactScreen = () => {
     );
   }, [data]);
 
-  const filteredContacts = useMemo(() => {
-    const query = debouncedSearchText;
-    if (!sections) return;
-
-    return sections
-      .map(section => ({
-        ...section,
-        data: section.data.filter(contact =>
-          contact.displayName.toLowerCase().includes(query),
-        ),
-      }))
-      .filter(section => section.data.length > 0);
-  }, [sections, debouncedSearchText]);
-
-  console.log(filteredContacts);
-
-  // useEffect(() => {
-  //   if (searchField.state.value === '') {
-  //     setRenderedContacts(sections);
-  //   }
-  //   {
-  //     setRenderedContacts(filteredContacts);
-  //   }
-  //   // setSearchText(searchField.state.value);
-  // }, [searchField.state.value]);
-
-  const RenderContactList = (props: { item: SearchContacts }) => {
-    const { item } = props;
-
-    return (
-      <Link href={`/chat/${item.id}`} replace asChild>
-        <Pressable className="px-6">
-          <View className="flex-1 flex-row items-center gap-2 ">
-            <View className="flex-1 flex-row items-center gap-4">
-              <View className="size-14 overflow-hidden rounded-full">
-                <Image
-                  source={{
-                    uri: item.avatarUrl,
-                  }}
-                  className="size-full"
-                />
-              </View>
-              <View className="flex-1 gap-1">
-                <TextCustom className="font-sf-pro-medium leading-[150%]">
-                  {item.displayName}
-                </TextCustom>
-                <TextCustom className="text-sm/[150%] tracking-[0.5px] dark:text-neutral-200">
-                  +2348123456789
-                </TextCustom>
-              </View>
-            </View>
-            <View
-              style={{
-                transform: [
-                  {
-                    rotate: '180deg',
-                  },
-                ],
-              }}
-            >
-              <ArrowLeftIcon
-                size={'20'}
-                stroke={Colors[colorScheme ?? 'light'].neutral[300]}
-              />
-            </View>
-          </View>
-        </Pressable>
-      </Link>
-    );
-  };
-
-  const RenderSectionHeader = (props: { section: string }) => {
-    const { section } = props;
-    return (
-      <View className="bg-other-divider px-6 py-1 dark:bg-neutral-500">
-        <TextCustom className="font-sf-pro-medium leading-[150%] text-neutral-300 dark:text-neutral-200">
-          {section}
-        </TextCustom>
-      </View>
-    );
-  };
-
-  const RenderEmptyState = () => {
-    return (
-      <View className="px-6">
-        <TextCustom className="text-center font-sf-pro-medium">
-          No results found for "{searchField.state.value}"
-        </TextCustom>
-      </View>
-    );
-  };
-
-  // const isRenderedContactsEmpty = (
-  //   sections: { data: SearchContacts[] }[],
-  // ): boolean => {
-  //   return sections.every(section => section.data.length === 0);
-  // };
-
-  // const isEmpty = isRenderedContactsEmpty(filteredContacts!!);
-
   return (
-    <View className="gap-6">
+    <View className="flex-1 gap-6">
       <View className="z-10 bg-white dark:bg-neutral-700">
         <AndroidSheetGrabber />
         <View className="gap-4 px-6 pt-10">
@@ -242,28 +123,74 @@ const ContactScreen = () => {
           </form.AppField>
         </View>
       </View>
-      {/* {isEmpty ? (
-        <RenderEmptyState />
+      {debouncedSearchText.trim().length < 3 ? (
+        <TextCustom className="px-6 text-center text-neutral-300">
+          Enter at least 3 characters to search for people.
+        </TextCustom>
+      ) : isFetching ? (
+        <ActivityIndicator />
+      ) : isError ? (
+        <Pressable onPress={() => void refetch()}>
+          <TextCustom className="px-6 text-center">
+            Search failed. Tap to try again.
+          </TextCustom>
+        </Pressable>
+      ) : sections.length === 0 ? (
+        <TextCustom className="px-6 text-center">
+          No results found for {debouncedSearchText}.
+        </TextCustom>
       ) : (
-        filteredContacts && (
-          <SectionList
-            sections={filteredContacts}
-            keyExtractor={item => item.id.toString()}
-            renderSectionHeader={({ section }) => {
-              return searchField.state.value === '' ? (
-                <RenderSectionHeader section={section.title} />
-              ) : null;
-            }}
-            nestedScrollEnabled={true}
-            contentContainerStyle={{
-              paddingBottom: insets.bottom + 200,
-              gap: 16,
-            }}
-            showsVerticalScrollIndicator={false}
-            renderItem={({ item }) => <RenderContactList item={item} />}
-          />
-        )
-      )} */}
+        <SectionList
+          sections={sections}
+          keyExtractor={item => item.id}
+          renderSectionHeader={({ section }) => (
+            <View className="bg-other-divider px-6 py-1 dark:bg-neutral-500">
+              <TextCustom className="font-sf-pro-medium leading-[150%] text-neutral-300 dark:text-neutral-200">
+                {section.title}
+              </TextCustom>
+            </View>
+          )}
+          nestedScrollEnabled
+          contentContainerStyle={{
+            paddingBottom: insets.bottom + 200,
+            gap: 16,
+          }}
+          showsVerticalScrollIndicator={false}
+          renderItem={({ item }) => (
+            <Pressable
+              onPress={() =>
+                router.push({
+                  pathname: '/chat/[id]',
+                  params: { id: item.id, target: 'user' },
+                })
+              }
+              accessibilityRole="button"
+              accessibilityLabel={`Start a conversation with ${item.displayName}`}
+              className="px-6"
+            >
+              <View className="flex-1 flex-row items-center gap-2">
+                <View className="flex-1 flex-row items-center gap-4">
+                  <View className="size-14 overflow-hidden rounded-full">
+                    <Image
+                      source={{ uri: item.avatarUrl }}
+                      className="size-full"
+                    />
+                  </View>
+                  <TextCustom className="flex-1 font-sf-pro-medium leading-[150%]">
+                    {item.displayName}
+                  </TextCustom>
+                </View>
+                <View style={{ transform: [{ rotate: '180deg' }] }}>
+                  <ArrowLeftIcon
+                    size="20"
+                    stroke={Colors[colorScheme ?? 'light'].neutral[300]}
+                  />
+                </View>
+              </View>
+            </Pressable>
+          )}
+        />
+      )}
     </View>
   );
 };
