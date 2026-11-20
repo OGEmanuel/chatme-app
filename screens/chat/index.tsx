@@ -1,5 +1,4 @@
 import ArrowLeftIcon from '@/assets/icons/jsx/arrow-left';
-import PaperAirplaneIcon from '@/assets/icons/jsx/paper-airplane-icon';
 import PaperClipIcon from '@/assets/icons/jsx/paper-clip-icon';
 import PhoneIcon from '@/assets/icons/jsx/phone-icon';
 import VideoCameraIcon from '@/assets/icons/jsx/video-camera-icon';
@@ -20,7 +19,6 @@ import {
   Platform,
   Pressable,
   StyleSheet,
-  TextInput,
   useColorScheme,
   View,
 } from 'react-native';
@@ -42,6 +40,8 @@ import {
 import { getTimeAgo } from './lib/utils';
 import Messages from './messages';
 import ShareModal from './share-modal';
+import { MessageComposer } from './message-composer';
+import { canSendMessage } from '@/lib/canSendMessage';
 
 type Destination = Conversation | ConversationResponse;
 
@@ -54,6 +54,17 @@ const ChatUIScreen = () => {
   const routeTarget = target ?? 'user';
   const userId = useAuthStore(state => state.userId);
   const sessionGeneration = useAuthStore(state => state.sessionGeneration);
+  const setPendingDestination = useAuthStore(
+    state => state.setPendingDestination,
+  );
+  useEffect(() => {
+    if (id) {
+      setPendingDestination({
+        pathname: '/chat/[id]',
+        params: { id, ...(target ? { target } : {}) },
+      });
+    }
+  }, [id, setPendingDestination, target]);
   const [destinationEntry, setDestinationEntry] = useState<{
     key: string;
     destination: Destination;
@@ -91,6 +102,12 @@ const ChatUIScreen = () => {
     userId,
     sessionGeneration,
   );
+  const sendDisabled = !canSendMessage(
+    message,
+    !!destination,
+    conversationId,
+    delivery.isSending,
+  );
 
   const BackgroundImage =
     colorScheme === 'dark'
@@ -98,15 +115,7 @@ const ChatUIScreen = () => {
       : require('../../assets/images/chat-bg.png');
 
   const handleSendMessage = () => {
-    if (
-      !destination ||
-      !conversationId ||
-      !userId ||
-      delivery.isSending ||
-      !message.trim()
-    ) {
-      return;
-    }
+    if (sendDisabled || !destination || !conversationId || !userId) return;
     if (delivery.send(message)) setMessage('');
   };
 
@@ -373,57 +382,18 @@ const ChatUIScreen = () => {
                         }
                       />
                     </PressableScale>
-                    <View className="flex-1 flex-row items-center self-center">
-                      <TextInput
-                        value={message}
-                        editable={!!destination}
-                        onChangeText={t => {
-                          setMessage(t);
-                          onChangeText();
-                        }}
-                        selectionColor={
-                          Colors[colorScheme ?? 'light'].primary[400]
-                        }
-                        placeholder="Write a message..."
-                        placeholderTextColor={
-                          colorScheme === 'dark'
-                            ? Colors[colorScheme ?? 'light'].neutral[200]
-                            : Colors[colorScheme ?? 'light'].neutral[300]
-                        }
-                        multiline
-                        className="android:p-0 max-h-16 flex-1 font-sf-pro-display text-base/[150%] text-neutral-600 dark:text-white"
-                      />
-                    </View>
-                    <PressableScale
-                      style={{
-                        width: 40,
-                        height: 40,
-                        borderRadius: 999,
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        backgroundColor:
-                          Colors[colorScheme ?? 'light'].primary[400],
+                    <MessageComposer
+                      message={message}
+                      editable={!!destination}
+                      isSending={delivery.isSending}
+                      canSend={!sendDisabled}
+                      colorScheme={colorScheme ?? 'light'}
+                      onChangeText={text => {
+                        setMessage(text);
+                        onChangeText();
                       }}
-                      disabled={
-                        delivery.isSending ||
-                        !destination ||
-                        !conversationId ||
-                        !message.trim()
-                      }
-                      accessibilityRole="button"
-                      accessibilityLabel="Send message"
-                      accessibilityState={{
-                        disabled:
-                          delivery.isSending ||
-                          !destination ||
-                          !conversationId ||
-                          !message.trim(),
-                        busy: delivery.isSending,
-                      }}
-                      onPress={handleSendMessage}
-                    >
-                      <PaperAirplaneIcon />
-                    </PressableScale>
+                      onSend={handleSendMessage}
+                    />
                   </View>
                 </View>
               </View>

@@ -21,11 +21,13 @@ const formSchema = z.object({
 });
 
 const VerifyScreen = () => {
-  const { phone, resendInSeconds, challengeId } = useLocalSearchParams<{
+  const params = useLocalSearchParams<{
     phone: string;
     resendInSeconds: string;
     challengeId: string;
   }>();
+  const { phone, resendInSeconds } = params;
+  const [challengeId, setChallengeId] = useState(params.challengeId);
   const [timer, setTimer] = useState(() => getValidCountdown(resendInSeconds));
   const router = useRouter();
   const logIn = useAuthStore(state => state.logIn);
@@ -103,7 +105,20 @@ const VerifyScreen = () => {
               refreshToken: data.refreshToken,
               userId: data.user.id,
             });
-            router.push('/(auth)/name');
+            const auth = useAuthStore.getState();
+            if (auth.hasCompletedOnboarding && auth.pendingDestination) {
+              router.replace({
+                pathname: auth.pendingDestination.pathname as '/chat/[id]',
+                params: {
+                  id: auth.pendingDestination.params?.id ?? '',
+                  ...(auth.pendingDestination.params?.target
+                    ? { target: auth.pendingDestination.params.target }
+                    : {}),
+                },
+              });
+            } else {
+              router.push('/(auth)/name');
+            }
           },
         },
       );
@@ -126,13 +141,20 @@ const VerifyScreen = () => {
   });
 
   const handleResend = () => {
+    if (isResendPending || timer > 0) return;
     resendMutation(
       {
         challengeId,
       },
       {
-        onSuccess: (data: { resendInSeconds: number }) => {
+        onSuccess: (data: {
+          resendInSeconds: number;
+          challengeId: string;
+        }) => {
+          setChallengeId(data.challengeId);
           setTimer(data.resendInSeconds);
+          deadlineRef.current =
+            Date.now() + data.resendInSeconds * 1000;
         },
       },
     );
@@ -166,7 +188,13 @@ const VerifyScreen = () => {
               {`${timer !== 1 ? 's' : ''}`}.
             </TextCustom>
             {timer < 1 && (
-              <Pressable onPress={handleResend}>
+              <Pressable
+                onPress={handleResend}
+                disabled={isResendPending}
+                accessibilityRole="button"
+                accessibilityLabel="Resend verification code"
+                accessibilityState={{ disabled: isResendPending, busy: isResendPending }}
+              >
                 <TextCustom className="font-sf-pro-bold text-sm/[150%] !text-primary-400">
                   {isResendPending ? 'Resending code...' : 'Resend code'}
                 </TextCustom>

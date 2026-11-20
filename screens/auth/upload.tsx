@@ -4,16 +4,14 @@ import IconButton from '@/components/ui/icon-button';
 import TextCustom from '@/components/ui/text';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { Image, useColorScheme, View } from 'react-native';
+import { Alert, Image, useColorScheme, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { CircularProgress } from './assets/icons/jsx/animated-circle';
-import UploadCheckIcon from './assets/icons/upload-check-icon.svg';
 import UploadIcon from './assets/icons/upload-icon.svg';
 import IllustrationDark from './assets/icons/upload-illustration-dark.svg';
 import Illustration from './assets/icons/upload-illustration.svg';
 import UploadImageIcon from './assets/icons/upload-image-icon.svg';
 import UploadPhotoModal from './modals/upload-photo';
-import { useAuthStore } from './store/auth-store';
 import { usePhotoControlStore } from './store/photo-control-store';
 
 const UploadScreen = () => {
@@ -21,14 +19,13 @@ const UploadScreen = () => {
   const [openModal, setOpenModal] = useState(false);
   const { photoUri } = usePhotoControlStore();
   const router = useRouter();
-  const completeOnboarding = useAuthStore(state => state.completeOnboarding);
 
   const handlePress = () => {
     if (photoUri) {
-      completeOnboarding();
-      router.push({
-        pathname: '/(tabs)/chats',
-      });
+      Alert.alert(
+        'Upload unavailable',
+        'This photo is selected only on this device. Profile upload and verification are not implemented yet.',
+      );
     } else {
       setOpenModal(true);
     }
@@ -49,9 +46,6 @@ const UploadScreen = () => {
           <View className="gap-4">
             {photoUri ? (
               <View className="size-[8.25rem] items-center self-center rounded-full">
-                <View className="absolute right-0 top-0 z-10">
-                  <UploadCheckIcon />
-                </View>
                 <View className="size-full overflow-hidden rounded-full">
                   <Image source={{ uri: photoUri }} className="size-full" />
                 </View>
@@ -76,12 +70,12 @@ const UploadScreen = () => {
             )}
             <TextCustom className="w-[11.625rem] self-center text-center font-sf-pro-medium leading-[150%] text-neutral-200">
               {photoUri
-                ? 'Done! Your photo successfully uploaded'
+                ? 'Photo selected locally. Upload is not completed.'
                 : 'Wait a second, your photo still uploading'}
             </TextCustom>
           </View>
           <Button
-            label={photoUri ? 'Next' : 'Upload Photo'}
+            label={photoUri ? 'Continue with selected photo' : 'Select Photo'}
             onPress={handlePress}
           />
           <UploadPhotoModal openModal={openModal} setOpenModal={setOpenModal} />

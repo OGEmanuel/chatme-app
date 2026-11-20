@@ -411,3 +411,29 @@ and finally handle backgrounding, network loss, reconnect, and cleanup.
 - [`screens/chat/lib/sockets/use-type-emitter.ts`](./screens/chat/lib/sockets/use-type-emitter.ts): typing command throttling and idle stop.
 - [`screens/chat/lib/store/sockets-control-store.ts`](./screens/chat/lib/store/sockets-control-store.ts): connection, presence, and typing state exposed to UI.
 - [`lib/https/index.ts`](./lib/https/index.ts): REST client and access-token refresh helper used before socket connections.
+
+## Testing
+
+### Tool versions
+
+- Node: 22.20.0
+- React: 19.1.0
+- React Native: 0.81.5
+- Expo: SDK 54
+- Package manager: pnpm 12.5.1
+- Jest: 29.7.0
+- jest-expo: 54.0.18
+- React Native Testing Library: 13.3.3
+
+### Commands
+
+```sh
+pnpm test
+pnpm test -- canSendMessage.test.ts
+pnpm test -- MessageComposer.test.tsx
+pnpm run verify
+pnpm run test:coverage
+```
+
+The Jest configuration discovers tests under `app`, `components`, `hooks`,
+`lib`, and `screens`. Test source is kept outside Expo Router route folders.

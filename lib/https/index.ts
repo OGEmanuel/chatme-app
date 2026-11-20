@@ -51,6 +51,7 @@ const refreshAccessToken = async (generation: number): Promise<string> => {
   useAuthStore.getState().setTokens({
     accessToken: data.accessToken,
     refreshToken: data.refreshToken,
+    userId: data.user?.id,
   });
 
   return data.accessToken;

@@ -1,16 +1,11 @@
 import { useAuthStore } from '@/screens/auth/store/auth-store';
-import {
-  InfiniteData,
-  useMutation,
-  useQueryClient,
-} from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { isAxiosError } from 'axios';
 import * as Crypto from 'expo-crypto';
 import { useCallback } from 'react';
 import { toast } from '@/lib/toast';
 import { MUTATIONS } from '../queries';
 import { QUERY_KEYS } from '../queries/key-factory';
-import type { Message, MessagesResponse } from '../queries/types';
 import {
   PendingSend,
   usePendingSendStore,
@@ -37,7 +32,6 @@ export function useMessageDelivery(
   const operations = usePendingSendStore(state => state.operations);
   const add = usePendingSendStore(state => state.add);
   const setStatus = usePendingSendStore(state => state.setStatus);
-  const remove = usePendingSendStore(state => state.remove);
   const pendingMessages = operations.filter(
     operation =>
       operation.accountId === accountId &&
@@ -67,88 +61,19 @@ export function useMessageDelivery(
       const queryKey = QUERY_KEYS.messages.messages(variables.conversationId);
       await queryClient.cancelQueries({ queryKey });
 
-      const optimisticMessage: Message = {
-        id: `optimistic:${variables.clientMessageId}`,
-        conversationId: variables.conversationId,
-        clientMessageId: variables.clientMessageId,
-        senderId: variables.accountId,
-        kind: 'text',
-        text: variables.text,
-        links: [],
-        attachments: [],
-        preview: '',
-        createdAt: new Date().toISOString(),
-        replyToMessageId: null,
-        editedAt: null,
-        deletedAt: null,
-        version: 0,
-        reactions: [],
-      };
-
-      queryClient.setQueryData<InfiniteData<MessagesResponse>>(
-        queryKey,
-        current =>
-          current
-            ? {
-                ...current,
-                pages: current.pages.map((page, index) =>
-                  index === 0
-                    ? {
-                        ...page,
-                        items: [
-                          optimisticMessage,
-                          ...page.items.filter(
-                            message =>
-                              message.clientMessageId !==
-                              variables.clientMessageId,
-                          ),
-                        ],
-                      }
-                    : page,
-                ),
-              }
-            : {
-                pages: [
-                  {
-                    items: [optimisticMessage],
-                    pageInfo: {
-                      nextCursor: null,
-                      hasNextPage: false,
-                    },
-                  },
-                ],
-                pageParams: [undefined],
-              },
-      );
-
       return { queryKey };
     },
     onError: (error, variables, context) => {
       setStatus(variables.accountId, variables.clientMessageId, 'failed');
-      if (context) {
-        queryClient.setQueryData<InfiniteData<MessagesResponse>>(
-          context.queryKey,
-          current =>
-            current && {
-              ...current,
-              pages: current.pages.map(page => ({
-                ...page,
-                items: page.items.filter(
-                  message =>
-                    message.clientMessageId !== variables.clientMessageId,
-                ),
-              })),
-            },
-        );
-      }
-
       const errorMessage = isAxiosError(error)
         ? (error.response?.data?.message ?? error.message)
         : error.message;
       toast.error('Failed to send message', errorMessage || 'Please try again.');
     },
     onSuccess: (_response, variables) => {
-      remove(variables.accountId, variables.clientMessageId);
+      // HTTP acknowledgement is not authoritative confirmation. Keep the
+      // operation durable until history/socket reconciliation proves it.
+      setStatus(variables.accountId, variables.clientMessageId, 'pending');
       const session = useAuthStore.getState();
       if (
         session.userId !== variables.accountId ||

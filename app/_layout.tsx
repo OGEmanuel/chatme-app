@@ -46,6 +46,7 @@ SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
+  const hasHydrated = useAuthStore(state => state.hasHydrated);
   const loggedIn = useAuthStore(state => state.isLoggedIn);
   const hasCompletedOnboarding = useAuthStore(
     state => state.hasCompletedOnboarding,
@@ -63,11 +64,11 @@ export default function RootLayout() {
   }, [fontsLoaded]);
 
   useEffect(() => {
-    if (!loggedIn) return;
+    if (!hasHydrated || !loggedIn) return;
     return startSocketLifecycle();
-  }, [loggedIn]);
+  }, [hasHydrated, loggedIn]);
 
-  if (!fontsLoaded) return null;
+  if (!hasHydrated || !fontsLoaded) return null;
 
   return (
     <ThemeProvider
