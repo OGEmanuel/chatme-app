@@ -46,3 +46,8 @@ app-example
 # generated native folders
 /ios
 /android
+
+# Test reports
+coverage/
+test-results/
+*.tap

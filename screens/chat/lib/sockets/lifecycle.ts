@@ -17,6 +17,26 @@ export function startSocketLifecycle() {
   let closed = false;
   let opening: Promise<void> | null = null;
   let missingUrlReported = false;
+  let retryTimer: ReturnType<typeof setTimeout> | null = null;
+  let transientRetryAttempt = 0;
+
+  const clearTransientRetry = () => {
+    if (retryTimer) {
+      clearTimeout(retryTimer);
+      retryTimer = null;
+    }
+  };
+
+  const scheduleTransientRetry = () => {
+    clearTransientRetry();
+    if (closed || transientRetryAttempt >= MAX_AUTH_RETRIES) return;
+    const delay = Math.min(1000 * 2 ** transientRetryAttempt, 8000);
+    transientRetryAttempt += 1;
+    retryTimer = setTimeout(() => {
+      retryTimer = null;
+      if (!closed) void open(true);
+    }, delay);
+  };
 
   const stopRealtime = registerRealtimeListeners();
 
@@ -61,6 +81,8 @@ export function startSocketLifecycle() {
           (error instanceof Error && error.message === 'No refresh token')
         ) {
           useAuthStore.getState().logOut(sessionGeneration);
+        } else if (!status || status >= 500) {
+          scheduleTransientRetry();
         }
       }
     })().finally(() => {
@@ -72,6 +94,8 @@ export function startSocketLifecycle() {
 
   const onConnect = () => {
     authRetries = 0;
+    transientRetryAttempt = 0;
+    clearTransientRetry();
     useSocketStore.setState({ isConnected: true });
     void queryClient.invalidateQueries({ queryKey: ['convos'] });
     console.info('socket connected');
@@ -117,6 +141,7 @@ export function startSocketLifecycle() {
   // cleanup
   return () => {
     closed = true;
+    clearTransientRetry();
     socket.off('connect', onConnect);
     socket.off('disconnect', onDisconnect);
     socket.off('connect_error', onError);

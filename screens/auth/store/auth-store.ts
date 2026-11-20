@@ -4,6 +4,7 @@ import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 
 type AuthState = {
+  hasHydrated: boolean;
   accessToken: string | null;
   refreshToken: string | null;
   userId: string | null;
@@ -11,8 +12,13 @@ type AuthState = {
 
   isLoggedIn: boolean;
   hasCompletedOnboarding: boolean;
+  pendingDestination: { pathname: string; params?: Record<string, string> } | null;
 
-  setTokens: (tokens: { accessToken: string; refreshToken?: string }) => void;
+  setTokens: (tokens: {
+    accessToken: string;
+    refreshToken?: string;
+    userId?: string;
+  }) => void;
 
   logIn: (tokens: {
     accessToken: string;
@@ -23,11 +29,15 @@ type AuthState = {
   logOut: (expectedGeneration?: number) => void;
   completeOnboarding: () => void;
   resetOnboarding: () => void;
+  setPendingDestination: (
+    destination: AuthState['pendingDestination'],
+  ) => void;
 };
 
 export const useAuthStore = create<AuthState>()(
   persist(
     (set, get) => ({
+      hasHydrated: false,
       accessToken: null,
       refreshToken: null,
       userId: null,
@@ -35,12 +45,14 @@ export const useAuthStore = create<AuthState>()(
 
       isLoggedIn: false,
       hasCompletedOnboarding: false,
+      pendingDestination: null,
 
-      setTokens: ({ accessToken, refreshToken }) => {
+      setTokens: ({ accessToken, refreshToken, userId }) => {
         set(state => ({
           ...state,
           accessToken,
           ...(refreshToken !== undefined && { refreshToken }),
+          ...(userId !== undefined && { userId }),
         }));
       },
 
@@ -88,9 +100,30 @@ export const useAuthStore = create<AuthState>()(
           hasCompletedOnboarding: false,
         });
       },
+      setPendingDestination: destination => {
+        set({ pendingDestination: destination });
+      },
     }),
     {
       name: 'chat-me-auth-store',
+      version: 1,
+      migrate: persisted => {
+        const old = persisted as Partial<AuthState>;
+        return {
+          ...old,
+          userId: old.userId ?? null,
+          sessionGeneration: old.sessionGeneration ?? 1,
+        };
+      },
+      onRehydrateStorage: () => (state, error) => {
+        if (error) {
+          console.warn('auth state recovery failed', error);
+        }
+        useAuthStore.setState({
+          hasHydrated: true,
+          sessionGeneration: state?.sessionGeneration ?? 1,
+        });
+      },
 
       storage: createJSONStorage(() => ({
         setItem: (key, value) => SecureStore.setItemAsync(key, value),
@@ -106,6 +139,7 @@ export const useAuthStore = create<AuthState>()(
         sessionGeneration: state.sessionGeneration,
         isLoggedIn: state.isLoggedIn,
         hasCompletedOnboarding: state.hasCompletedOnboarding,
+        pendingDestination: state.pendingDestination,
       }),
     },
   ),
