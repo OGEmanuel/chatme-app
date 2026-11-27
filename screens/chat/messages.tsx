@@ -17,6 +17,7 @@ import type { PendingSend } from './lib/store/pending-send-store';
 import { usePendingSendStore } from './lib/store/pending-send-store';
 import { ChatListItem } from './lib/types';
 import { format24HrTime, getDateLabel } from './lib/utils';
+import { track } from '@/lib/analytics';
 
 type Message = {
   id: string;
@@ -75,6 +76,15 @@ const Messages = (props: {
     () => data?.pages.flatMap(page => page.items) ?? [],
     [data],
   );
+  useEffect(() => {
+    if (isError && conversationId) {
+      track('history_load_failed', {
+        load_kind: 'initial',
+        outcome: 'rejected',
+        retryable: true,
+      });
+    }
+  }, [conversationId, isError]);
   const serverClientIds = useMemo(
     () => new Set(serverMessages.map(message => message.clientMessageId)),
     [serverMessages],
@@ -109,6 +119,37 @@ const Messages = (props: {
   useEffect(() => {
     for (const operation of pendingMessages) {
       if (serverClientIds.has(operation.clientMessageId)) {
+        const confirmed = usePendingSendStore
+          .getState()
+          .markAnalyticsConfirmed(
+            operation.accountId,
+            operation.clientMessageId,
+          );
+        if (confirmed) {
+          const durationMs =
+            confirmed.attemptedAt !== undefined
+              ? Math.max(0, Date.now() - confirmed.attemptedAt)
+              : undefined;
+          track('message_send_confirmed', {
+            operation_id: confirmed.clientMessageId,
+            message_type: 'text',
+            conversation_type: 'direct',
+            attempt_number: confirmed.attemptNumber ?? 1,
+            outcome: 'confirmed',
+            duration_ms: durationMs,
+            is_reply: false,
+          });
+          if (
+            confirmed.status === 'failed' ||
+            (confirmed.attemptNumber ?? 1) > 1
+          ) {
+            track('message_recovery_completed', {
+              operation_id: confirmed.clientMessageId,
+              outcome: 'confirmed',
+              attempt_number: confirmed.attemptNumber ?? 1,
+            });
+          }
+        }
         removePendingSend(operation.accountId, operation.clientMessageId);
       }
     }

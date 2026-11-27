@@ -8,6 +8,8 @@ import AuthLayoutWrapper, {
   AuthLayoutInnerWrapper,
 } from './components/layout-wrapper';
 import { useAuthStore } from './store/auth-store';
+import { track } from '@/lib/analytics';
+import { useEffect } from 'react';
 
 const formSchema = z.object({
   name: z.string().min(2, {
@@ -17,6 +19,9 @@ const formSchema = z.object({
 
 const NameScreen = () => {
   const router = useRouter();
+  useEffect(() => {
+    track('onboarding_started', { entry_step: 'name' });
+  }, []);
 
   const form = useAppForm({
     defaultValues: {

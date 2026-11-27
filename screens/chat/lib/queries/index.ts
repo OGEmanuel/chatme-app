@@ -1,6 +1,7 @@
 import { https } from '@/lib/https';
 import type { Conversation } from '@/screens/home/chats/lib/queries/type';
 import { ConversationResponse, MessagesResponse } from './types';
+import type { Message } from './types';
 
 export const QUERIES = {
   getConversation: async (conversationId: string, signal?: AbortSignal) => {
@@ -46,7 +47,7 @@ export const MUTATIONS = {
     data: { clientMessageId: string; text: string },
     signal?: AbortSignal,
   ) => {
-    const response = await https.post(
+    const response = await https.post<Message | { message: Message }>(
       `/conversations/${convoId}/messages`,
       data,
       { signal },

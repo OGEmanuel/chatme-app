@@ -42,6 +42,7 @@ import Messages from './messages';
 import ShareModal from './share-modal';
 import { MessageComposer } from './message-composer';
 import { canSendMessage } from '@/lib/canSendMessage';
+import { track } from '@/lib/analytics';
 
 type Destination = Conversation | ConversationResponse;
 
@@ -109,6 +110,15 @@ const ChatUIScreen = () => {
     delivery.isSending,
   );
 
+  useEffect(() => {
+    if (destination && conversationId) {
+      track('conversation_opened', {
+        conversation_type:
+          'otherParticipant' in destination ? 'direct' : 'group',
+      });
+    }
+  }, [conversationId, destination]);
+
   const BackgroundImage =
     colorScheme === 'dark'
       ? require('../../assets/images/chat-bg-dark.png')
@@ -120,6 +130,7 @@ const ChatUIScreen = () => {
   };
 
   const handleRetryResolution = () => {
+    track('history_retry_started', { load_kind: 'initial' });
     setResolutionErrorKey(null);
     setResolutionAttempt(attempt => attempt + 1);
   };

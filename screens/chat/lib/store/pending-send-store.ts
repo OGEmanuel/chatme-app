@@ -9,6 +9,9 @@ export type PendingSend = {
   text: string;
   createdAt: string;
   status: 'pending' | 'failed';
+  attemptNumber?: number;
+  analyticsConfirmed?: boolean;
+  attemptedAt?: number;
 };
 
 type PendingSendState = {
@@ -21,6 +24,10 @@ type PendingSendState = {
   ) => void;
   remove: (accountId: string, clientMessageId: string) => void;
   markInterruptedAsFailed: () => void;
+  markAnalyticsConfirmed: (
+    accountId: string,
+    clientMessageId: string,
+  ) => PendingSend | null;
 };
 
 export const usePendingSendStore = create<PendingSendState>()(
@@ -63,6 +70,23 @@ export const usePendingSendStore = create<PendingSendState>()(
               : operation,
           ),
         })),
+      markAnalyticsConfirmed: (accountId, clientMessageId) => {
+        let confirmedOperation: PendingSend | null = null;
+        set(state => ({
+          operations: state.operations.map(operation => {
+            if (
+              operation.accountId === accountId &&
+              operation.clientMessageId === clientMessageId &&
+              !operation.analyticsConfirmed
+            ) {
+              confirmedOperation = { ...operation, analyticsConfirmed: true };
+              return confirmedOperation;
+            }
+            return operation;
+          }),
+        }));
+        return confirmedOperation;
+      },
     }),
     {
       name: 'chat-me-pending-sends',
