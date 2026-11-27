@@ -13,6 +13,7 @@ import { MUTATIONS } from './lib/queries';
 import { useCountryControlStore } from './store/country-control-store';
 import { Alert } from 'react-native';
 import { toast } from '@/lib/toast';
+import { track } from '@/lib/analytics';
 
 const formSchema = z.object({
   phoneNumber: z.string().regex(/^[0-9\s\-().]{7,20}$/, {
@@ -64,6 +65,7 @@ const SignInScreen = () => {
             resendInSeconds: number;
             challengeId: string;
           }) => {
+            track('otp_requested');
             Alert.alert(
               'OTP Sent!',
               `Please copy this code 1234 for user verification`,
@@ -87,6 +89,13 @@ const SignInScreen = () => {
                 },
               ],
             );
+          },
+          onError: () => {
+            track('otp_verification_failed', {
+              error_code: 'OTP_REQUEST_FAILED',
+              outcome: 'rejected',
+              retryable: true,
+            });
           },
         },
       );

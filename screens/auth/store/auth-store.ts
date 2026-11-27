@@ -5,6 +5,7 @@ import { createJSONStorage, persist } from 'zustand/middleware';
 
 type AuthState = {
   hasHydrated: boolean;
+  hydrationError: string | null;
   accessToken: string | null;
   refreshToken: string | null;
   userId: string | null;
@@ -29,15 +30,18 @@ type AuthState = {
   logOut: (expectedGeneration?: number) => void;
   completeOnboarding: () => void;
   resetOnboarding: () => void;
+  retryHydration: () => Promise<void>;
   setPendingDestination: (
     destination: AuthState['pendingDestination'],
   ) => void;
+  consumePendingDestination: () => void;
 };
 
 export const useAuthStore = create<AuthState>()(
   persist(
     (set, get) => ({
       hasHydrated: false,
+      hydrationError: null,
       accessToken: null,
       refreshToken: null,
       userId: null,
@@ -100,8 +104,14 @@ export const useAuthStore = create<AuthState>()(
           hasCompletedOnboarding: false,
         });
       },
+      retryHydration: async () => {
+        await useAuthStore.persist.rehydrate();
+      },
       setPendingDestination: destination => {
         set({ pendingDestination: destination });
+      },
+      consumePendingDestination: () => {
+        set({ pendingDestination: null });
       },
     }),
     {
@@ -118,29 +128,42 @@ export const useAuthStore = create<AuthState>()(
       onRehydrateStorage: () => (state, error) => {
         if (error) {
           console.warn('auth state recovery failed', error);
+          useAuthStore.setState({
+            hasHydrated: false,
+            hydrationError:
+              'Could not read your saved login. Check device storage and retry.',
+          });
+          return;
         }
         useAuthStore.setState({
           hasHydrated: true,
+          hydrationError: null,
           sessionGeneration: state?.sessionGeneration ?? 1,
         });
       },
 
       storage: createJSONStorage(() => ({
-        setItem: (key, value) => SecureStore.setItemAsync(key, value),
+        setItem: (key, value) =>
+          value === '{}'
+            ? Promise.resolve()
+            : SecureStore.setItemAsync(key, value),
 
         getItem: key => SecureStore.getItemAsync(key),
 
         removeItem: key => SecureStore.deleteItemAsync(key),
       })),
 
-      partialize: state => ({
-        refreshToken: state.refreshToken,
-        userId: state.userId,
-        sessionGeneration: state.sessionGeneration,
-        isLoggedIn: state.isLoggedIn,
-        hasCompletedOnboarding: state.hasCompletedOnboarding,
-        pendingDestination: state.pendingDestination,
-      }),
+      partialize: state =>
+        state.hydrationError
+          ? {}
+          : {
+              refreshToken: state.refreshToken,
+              userId: state.userId,
+              sessionGeneration: state.sessionGeneration,
+              isLoggedIn: state.isLoggedIn,
+              hasCompletedOnboarding: state.hasCompletedOnboarding,
+              pendingDestination: state.pendingDestination,
+            },
     },
   ),
 );

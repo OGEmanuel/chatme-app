@@ -4,7 +4,7 @@ import IconButton from '@/components/ui/icon-button';
 import TextCustom from '@/components/ui/text';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { Alert, Image, useColorScheme, View } from 'react-native';
+import { Image, Pressable, useColorScheme, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { CircularProgress } from './assets/icons/jsx/animated-circle';
 import UploadIcon from './assets/icons/upload-icon.svg';
@@ -13,19 +13,47 @@ import Illustration from './assets/icons/upload-illustration.svg';
 import UploadImageIcon from './assets/icons/upload-image-icon.svg';
 import UploadPhotoModal from './modals/upload-photo';
 import { usePhotoControlStore } from './store/photo-control-store';
+import { useAuthStore } from './store/auth-store';
+import { track } from '@/lib/analytics';
 
 const UploadScreen = () => {
   const colorScheme = useColorScheme();
   const [openModal, setOpenModal] = useState(false);
   const { photoUri } = usePhotoControlStore();
   const router = useRouter();
+  const completeOnboarding = useAuthStore(state => state.completeOnboarding);
+  const consumePendingDestination = useAuthStore(
+    state => state.consumePendingDestination,
+  );
+  const pendingDestination = useAuthStore(state => state.pendingDestination);
+  const clearPhotoUri = usePhotoControlStore(state => state.clearPhotoUri);
+  const [finishing, setFinishing] = useState(false);
+
+  const finishOnboarding = (skipPhoto: boolean) => {
+    if (finishing) return;
+    setFinishing(true);
+    completeOnboarding();
+    if (skipPhoto) clearPhotoUri();
+    track('onboarding_completed');
+    if (pendingDestination) {
+      consumePendingDestination();
+      router.replace({
+        pathname: pendingDestination.pathname as '/chat/[id]',
+        params: {
+          id: pendingDestination.params?.id ?? '',
+          ...(pendingDestination.params?.target
+            ? { target: pendingDestination.params.target }
+            : {}),
+        },
+      });
+    } else {
+      router.replace('/(tabs)/chats');
+    }
+  };
 
   const handlePress = () => {
     if (photoUri) {
-      Alert.alert(
-        'Upload unavailable',
-        'This photo is selected only on this device. Profile upload and verification are not implemented yet.',
-      );
+      finishOnboarding(true);
     } else {
       setOpenModal(true);
     }
@@ -71,13 +99,22 @@ const UploadScreen = () => {
             <TextCustom className="w-[11.625rem] self-center text-center font-sf-pro-medium leading-[150%] text-neutral-200">
               {photoUri
                 ? 'Photo selected locally. Upload is not completed.'
-                : 'Wait a second, your photo still uploading'}
+                : 'Select a photo or continue without one.'}
             </TextCustom>
           </View>
           <Button
-            label={photoUri ? 'Continue with selected photo' : 'Select Photo'}
+            label={photoUri ? 'Continue without photo' : 'Select Photo'}
             onPress={handlePress}
           />
+          <Pressable
+            accessibilityRole="button"
+            disabled={finishing}
+            onPress={() => finishOnboarding(true)}
+          >
+            <TextCustom className="text-center font-sf-pro-medium text-primary-400">
+              Skip for now
+            </TextCustom>
+          </Pressable>
           <UploadPhotoModal openModal={openModal} setOpenModal={setOpenModal} />
         </View>
       </View>

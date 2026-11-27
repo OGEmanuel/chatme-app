@@ -4,6 +4,7 @@ import { useAuthStore } from '@/screens/auth/store/auth-store';
 import { View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MUTATIONS } from './utils/queries';
+import { resetAnalyticsIdentity, track } from '@/lib/analytics';
 
 const SettingsScreen = () => {
   const refreshToken = useAuthStore(state => state.refreshToken);
@@ -36,7 +37,9 @@ const SettingsScreen = () => {
           isPending={isPending}
           onPress={() => {
             const token = refreshToken;
+            track('logout_completed');
             logOut(sessionGeneration);
+            resetAnalyticsIdentity();
             if (token) mutate({ refreshToken: token });
           }}
         />

@@ -13,6 +13,7 @@ import AuthLayoutWrapper, {
 } from './components/layout-wrapper';
 import { MUTATIONS } from './lib/queries';
 import { useAuthStore } from './store/auth-store';
+import { setAnalyticsUser, track } from '@/lib/analytics';
 
 const formSchema = z.object({
   otp: z.string().min(4, {
@@ -41,7 +42,7 @@ const VerifyScreen = () => {
     {
       accessToken: string;
       refreshToken: string;
-      user: { id: string };
+      user: { id: string; profileComplete: boolean };
     }
   >({
     mutationFn: (data: {
@@ -105,6 +106,13 @@ const VerifyScreen = () => {
               refreshToken: data.refreshToken,
               userId: data.user.id,
             });
+            if (data.user.profileComplete) {
+              useAuthStore.getState().completeOnboarding();
+            } else {
+              useAuthStore.getState().resetOnboarding();
+            }
+            setAnalyticsUser(data.user.id);
+            track('login_completed', { login_kind: 'otp' });
             const auth = useAuthStore.getState();
             if (auth.hasCompletedOnboarding && auth.pendingDestination) {
               router.replace({
@@ -119,6 +127,13 @@ const VerifyScreen = () => {
             } else {
               router.push('/(auth)/name');
             }
+          },
+          onError: () => {
+            track('otp_verification_failed', {
+              error_code: 'OTP_REJECTED',
+              outcome: 'rejected',
+              retryable: true,
+            });
           },
         },
       );

@@ -9,16 +9,23 @@ import {
 } from '@react-navigation/native';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { useFonts } from 'expo-font';
-import { SplashScreen, Stack } from 'expo-router';
+import { SplashScreen, Stack, useGlobalSearchParams, usePathname } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
-import { Platform } from 'react-native';
+import { Platform, Pressable, Text, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import 'react-native-reanimated';
 import Toast from 'react-native-toast-message';
 import '../global.css';
 import { startSocketLifecycle } from '@/screens/chat/lib/sockets/lifecycle';
 import { queryClient } from '@/lib/query-client';
+import {
+  initializeAnalytics,
+  trackAppOpened,
+  setAnalyticsUser,
+  resetAnalyticsIdentity,
+  track,
+} from '@/lib/analytics';
 
 const NavigationLightTheme = {
   ...DefaultTheme,
@@ -45,9 +52,12 @@ export const unstable_settings = {
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
+  const pathname = usePathname();
+  const globalParams = useGlobalSearchParams<{ id?: string; target?: string }>();
   const colorScheme = useColorScheme();
   const hasHydrated = useAuthStore(state => state.hasHydrated);
   const loggedIn = useAuthStore(state => state.isLoggedIn);
+  const hydrationError = useAuthStore(state => state.hydrationError);
   const hasCompletedOnboarding = useAuthStore(
     state => state.hasCompletedOnboarding,
   );
@@ -56,6 +66,19 @@ export default function RootLayout() {
     SfProMedium: require('../assets/fonts/sf-pro-display/SFPRODISPLAYMEDIUM.otf'),
     SfProBold: require('../assets/fonts/sf-pro-display/SFPRODISPLAYBOLD.otf'),
   });
+
+  useEffect(() => {
+    initializeAnalytics();
+    trackAppOpened();
+  }, []);
+
+  useEffect(() => {
+    if (loggedIn && useAuthStore.getState().userId) {
+      setAnalyticsUser(useAuthStore.getState().userId);
+    } else {
+      resetAnalyticsIdentity();
+    }
+  }, [loggedIn]);
 
   useEffect(() => {
     if (fontsLoaded) {
@@ -68,7 +91,44 @@ export default function RootLayout() {
     return startSocketLifecycle();
   }, [hasHydrated, loggedIn]);
 
-  if (!hasHydrated || !fontsLoaded) return null;
+  useEffect(() => {
+    if (!hasHydrated) return;
+    const screenName = pathname.startsWith('/chat/')
+      ? 'chat'
+      : pathname.startsWith('/(auth)/')
+        ? pathname.replace('/(auth)/', 'auth/')
+        : pathname.replace(/^\/+/, '') || 'home';
+    track('screen_viewed', { screen_name: screenName });
+  }, [hasHydrated, pathname]);
+
+  useEffect(() => {
+    if (!pathname.startsWith('/chat/') || !globalParams.id) return;
+    useAuthStore.getState().setPendingDestination({
+      pathname: '/chat/[id]',
+      params: {
+        id: globalParams.id,
+        ...(globalParams.target ? { target: globalParams.target } : {}),
+      },
+    });
+  }, [globalParams.id, globalParams.target, pathname]);
+
+  if (!hasHydrated || !fontsLoaded) {
+    if (hydrationError) {
+      return (
+        <View className="flex-1 items-center justify-center gap-4 px-6">
+          <Text className="text-center text-neutral-900">{hydrationError}</Text>
+          <Pressable
+            accessibilityRole="button"
+            onPress={() => useAuthStore.getState().retryHydration()}
+            className="rounded-xl bg-primary-400 px-5 py-3"
+          >
+            <Text className="font-medium text-white">Retry</Text>
+          </Pressable>
+        </View>
+      );
+    }
+    return null;
+  }
 
   return (
     <ThemeProvider
